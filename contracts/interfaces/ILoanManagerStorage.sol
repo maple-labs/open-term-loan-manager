@@ -10,13 +10,6 @@ interface ILoanManagerStorage {
     function accountedInterest() external view returns (uint112 accountedInterest_);
 
     /**
-     *  @dev    Gets allowed slippage for a give collateral asset.
-     *  @param  collateralAsset_ Address of a collateral asset.
-     *  @return allowedSlippage_ The allowed slippage for the collateral asset.
-     */
-    function allowedSlippageFor(address collateralAsset_) external view returns (uint256 allowedSlippage_);
-
-    /**
      *  @dev    Gets the timestamp of the domain end.
      *  @return domainEnd_ The timestamp of the domain end.
      */
@@ -48,29 +41,14 @@ interface ILoanManagerStorage {
      *  @return interest            The amount of interest to be recovered.
      *  @return lateInterest        The amount of late interest to be recovered.
      *  @return platformFees        The amount of platform fees owed.
-     *  @return liquidator          The address of the liquidator.
      */
     function liquidationInfo(address loan_) external view returns (
         bool    triggeredByGovernor,
         uint128 principal,
         uint120 interest,
         uint256 lateInterest,
-        uint96  platformFees,
-        address liquidator
+        uint96  platformFees
     );
-
-    /**
-     *  @dev    Returns the current `loanTransferAdmin` address.
-     *  @return loanTransferAdmin_ The payment counter.
-     */
-    function loanTransferAdmin() external view returns (address loanTransferAdmin_);
-
-    /**
-     *  @dev   Gets the minimum ratio for a collateral asset.
-     *  @param collateralAsset_  Address of a collateral asset.
-     *  @param minRatio_         The value for minRatio.
-     */
-    function minRatioFor(address collateralAsset_) external view returns (uint256 minRatio_);
 
     /**
      *  @dev    Gets the payment counter.

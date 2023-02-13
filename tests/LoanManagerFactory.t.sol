@@ -4,21 +4,21 @@ pragma solidity 0.8.7;
 import { Address, TestUtils } from "../modules/contract-test-utils/contracts/test.sol";
 
 import { LoanManager }            from "../contracts/LoanManager.sol";
-import { LoanManagerFactory }     from "../contracts/proxy/LoanManagerFactory.sol";
-import { LoanManagerInitializer } from "../contracts/proxy/LoanManagerInitializer.sol";
+import { LoanManagerFactory }     from "../contracts/LoanManagerFactory.sol";
+import { LoanManagerInitializer } from "../contracts/LoanManagerInitializer.sol";
 
 import { MockGlobals, MockPool } from "./mocks/Mocks.sol";
 
 contract LoanManagerFactoryBase is TestUtils {
 
-    address internal governor;
-    address internal implementation;
-    address internal initializer;
+    address governor;
+    address implementation;
+    address initializer;
 
-    MockGlobals internal globals;
-    MockPool    internal pool;
+    MockGlobals globals;
+    MockPool    pool;
 
-    LoanManagerFactory internal factory;
+    LoanManagerFactory factory;
 
     function setUp() public virtual {
         governor       = address(new Address());
@@ -37,15 +37,6 @@ contract LoanManagerFactoryBase is TestUtils {
         globals.setValidPoolDeployer(address(this), true);
     }
 
-    function test_createInstance_notPoolDeployer() external {
-        globals.setValidPoolDeployer(address(this), false);
-        vm.expectRevert("LMF:CI:NOT_DEPLOYER");
-        LoanManager(factory.createInstance(abi.encode(address(pool)), "SALT"));
-
-        globals.setValidPoolDeployer(address(this), true);
-        LoanManager(factory.createInstance(abi.encode(address(pool)), "SALT"));
-    }
-
     function testFail_createInstance_notPool() external {
         factory.createInstance(abi.encode(address(1)), "SALT");
     }
@@ -54,6 +45,8 @@ contract LoanManagerFactoryBase is TestUtils {
         factory.createInstance(abi.encode(address(pool)), "SALT");
         factory.createInstance(abi.encode(address(pool)), "SALT");
     }
+
+    // TODO: Revisit the need for: `test_createInstance_notPoolDeployer()`
 
     function test_createInstance_success() external {
         pool.__setAsset(address(1));

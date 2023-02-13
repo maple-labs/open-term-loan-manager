@@ -1,20 +1,13 @@
-# Maple Fixed Term Loan Manager V2 (Loan Manager)
+# Maple Open-Term Loan Manager
 
-![Foundry CI](https://github.com/maple-labs/fixed-term-loan-manager-private/actions/workflows/forge.yaml/badge.svg)
-[![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://maplefinance.gitbook.io/maple/maple-for-developers/protocol-overview)
-[![Foundry][foundry-badge]][foundry]
-[![License: BUSL 1.1](https://img.shields.io/badge/License-BUSL%201.1-blue.svg)](https://github.com/maple-labs/fixed-term-loan-manager-private/blob/main/LICENSE)
-
-[foundry]: https://getfoundry.sh/
-[foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
+[![Foundry CI](https://github.com/maple-labs/open-term-loan-manager-private/actions/workflows/forge.yaml/badge.svg)](https://github.com/maple-labs/open-term-loan-manager-private/actions/workflows/forge.yaml)
+[![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://maplefinance.gitbook.io/maple/technical-resources/protocol-overview)
+[![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://getfoundry.sh/)
+[![License: BUSL 1.1](https://img.shields.io/badge/License-BUSL%201.1-blue.svg)](https://github.com/maple-labs/open-term-loan-manager-private/blob/main/LICENSE)
 
 ## Overview
 
-This repository contains the core contracts of the Maple V2 protocol that are responsible for the deployment and management of Maple Fixed Term Loan Managers:
-
-| Contract | Description |
-| -------- | ------- |
-| [`LoanManager`](https://github.com/maple-labs/maple-core-v2/wiki/LoanManager) | Owns and keeps track of value of all outstanding loans. |
+This repository contains the contracts that are responsible for the deployment and management of Maple Open-Term Loan Managers:
 
 ## Dependencies/Inheritance
 
@@ -33,8 +26,8 @@ Versions of dependencies can be checked with `git submodule status`.
 This project was built using [Foundry](https://book.getfoundry.sh/). Refer to installation instructions [here](https://github.com/foundry-rs/foundry#installation).
 
 ```sh
-git clone git@github.com:maple-labs/pool-v2-private.git
-cd pool-v2-private
+git clone git@github.com:maple-labs/open-term-loan-manager-private.git
+cd open-term-loan-manager-private
 forge install
 ```
 
@@ -47,15 +40,13 @@ forge install
 
 ## Audit Reports
 
-| Auditor | Report Link |
-|---|---|
-| Trail of Bits | [`2022-08-24 - Trail of Bits Report`](https://docs.google.com/viewer?url=https://github.com/maple-labs/maple-v2-audits/files/10246688/Maple.Finance.v2.-.Final.Report.-.Fixed.-.2022.pdf) |
-| Spearbit | [`2022-10-17 - Spearbit Report`](https://docs.google.com/viewer?url=https://github.com/maple-labs/maple-v2-audits/files/10223545/Maple.Finance.v2.-.Spearbit.pdf) |
-| Three Sigma | [`2022-10-24 - Three Sigma Report`](https://docs.google.com/viewer?url=https://github.com/maple-labs/maple-v2-audits/files/10223541/three-sigma_maple-finance_code-audit_v1.1.1.pdf) |
+*TODO*
 
 ## Bug Bounty
 
 For all information related to the ongoing bug bounty for these contracts run by [Immunefi](https://immunefi.com/), please visit this [site](https://immunefi.com/bounty/maple/).
+
+*TODO: Update the bug bounty to include references to the new contracts in this repository.*
 
 ## About Maple
 

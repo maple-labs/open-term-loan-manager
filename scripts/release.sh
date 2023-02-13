@@ -15,7 +15,7 @@ echo "{
   \"version\": \"${version}\",
   \"description\": \"${customDescription}\",
   \"author\": \"Maple Labs\",
-  \"license\": \"AGPLv3\",
+  \"license\": \"BUSL 1.1\",
   \"repository\": {
     \"type\": \"git\",
     \"url\": \"https://github.com/maple-labs/${name}.git\"

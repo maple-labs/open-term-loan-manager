@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { ILoanManagerInitializer } from "../interfaces/ILoanManagerInitializer.sol";
-import { IPoolLike }               from "../interfaces/Interfaces.sol";
+import { ILoanManagerInitializer } from "./interfaces/ILoanManagerInitializer.sol";
+import { IPoolLike }               from "./interfaces/Interfaces.sol";
 
 import { LoanManagerStorage } from "./LoanManagerStorage.sol";
 

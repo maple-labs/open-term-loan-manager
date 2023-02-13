@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { ILoanManagerStorage } from "../interfaces/ILoanManagerStorage.sol";
+import { ILoanManagerStorage } from "./interfaces/ILoanManagerStorage.sol";
 
 abstract contract LoanManagerStorage is ILoanManagerStorage {
 
+    // TODO: Can this be removed?
     struct LiquidationInfo {
         bool    triggeredByGovernor;  // Slot 1: bool    -  1 bytes
         uint128 principal;            //         uint128 - 16 bytes: max = 3.4e38
         uint120 interest;             //         uint120 - 15 bytes: max = 1.7e38
         uint256 lateInterest;         // Slot 2: uint256 - 32 bytes: max = 1.1e77
         uint96  platformFees;         // Slot 3: uint96  - 12 bytes: max = 7.9e28 (>79b units at 1e18)
-        address liquidator;           //         address - 20 bytes
     }
 
+    // TODO: Remove `refinanceInterest`.
     struct PaymentInfo {
         uint24  platformManagementFeeRate;  // Slot 1: uint24  -  3 bytes: max = 1.6e7  (1600%)
         uint24  delegateManagementFeeRate;  //         uint24  -  3 bytes: max = 1.6e7  (1600%)
@@ -43,15 +44,12 @@ abstract contract LoanManagerStorage is ILoanManagerStorage {
 
     // NOTE: Addresses below uints to preserve full storage slots
     address public override fundsAsset;
-    address public override loanTransferAdmin;
     address public override pool;
     address public override poolManager;
 
     mapping(address => uint24) public override paymentIdOf;
 
-    mapping(address => uint256) public override allowedSlippageFor;
-    mapping(address => uint256) public override minRatioFor;
-
+    // TODO: Can this be removed?
     mapping(address => LiquidationInfo) public override liquidationInfo;
 
     mapping(uint256 => PaymentInfo) public override payments;

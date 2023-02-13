@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { LoanManagerStorage } from "../../contracts/proxy/LoanManagerStorage.sol";
+import { LoanManagerStorage } from "../../contracts/LoanManagerStorage.sol";
 
+// TODO: Make sure to update this to match the latest version of the `LoanManagerStorage`.
 interface ILoanManagerStructs {
 
     struct LiquidationInfo {
@@ -11,7 +12,6 @@ interface ILoanManagerStructs {
         uint120 interest;             //         uint120 - 15 bytes: max = 1.7e38
         uint256 lateInterest;         // Slot 2: uint256 - 32 bytes: max = 1.1e77
         uint96  platformFees;         // Slot 2: uint96  - 12 bytes: max = 7.9e28 (>79b units at 1e18)
-        address liquidator;           //         address - 20 bytes
     }
 
     struct PaymentInfo {
@@ -25,9 +25,9 @@ interface ILoanManagerStructs {
     }
 
     struct SortedPayment {
-        uint24  previous;
-        uint24  next;
-        uint48  paymentDueDate;
+        uint24 previous;
+        uint24 next;
+        uint48 paymentDueDate;
     }
 
     function liquidationInfo(address loan_) external view returns (LiquidationInfo memory liquidationInfo_);

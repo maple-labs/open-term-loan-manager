@@ -44,36 +44,35 @@ interface IMapleLoanLike {
 
     function acceptLender() external;
 
-    function acceptNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_)
-        external returns (bytes32 refinanceCommitment_);
-
     function borrower() external view returns (address borrower_);
+
+    function call(uint256 principalToReturn_) external returns (uint40 paymentDueDate_);
 
     function collateralAsset() external view returns(address asset_);
 
-    function fundLoan() external returns (uint256 fundsLent_);
+    function datePaid() external view returns (uint40 datePaid_);
 
-    function getNextPaymentDetailedBreakdown() external view returns (
-        uint256 principal_,
-        uint256[3] memory interest_,
-        uint256[2] memory fees_
-    );
+    function fund() external returns (uint256 fundsLent_, uint40 paymentDefaultDate_);
 
     function isImpaired() external view returns (bool isImpaired_);
 
-    function nextPaymentDueDate() external view returns (uint256 nextPaymentDueDate_);
+    function impair() external returns (uint40 paymentDueDate_);
 
-    function originalNextPaymentDueDate() external view returns (uint256 originalNextPaymentDueDate_);
+    function paymentDueDate() external view returns (uint40 paymentDueDate_);
+
+    function paymentInterval() external view returns (uint32 paymentInterval_);
+
+    function paymentBreakdown() external view returns (uint256 interest_, uint256 lateInterest_);
 
     function principal() external view returns (uint256 principal_);
 
-    function removeLoanImpairment() external;
+    function removeCall() external returns (uint40 paymentDueDate_);
 
-    function repossess(address destination_) external returns (uint256 collateralRepossessed_, uint256 fundsRepossessed_);
+    function removeImpairment() external returns (uint40 paymentDueDate_);
+
+    function repossess(address destination_) external returns (uint256 fundsRepossessed_);
 
     function setPendingLender(address pendingLender_) external;
-
-    function impairLoan() external;
 
 }
 
