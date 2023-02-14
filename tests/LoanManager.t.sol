@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { Address, TestUtils } from "../modules/contract-test-utils/contracts/test.sol";
-import { MockERC20 }          from "../modules/erc20/contracts/test/mocks/MockERC20.sol";
+import { Test }      from "../modules/forge-std/src/Test.sol";
+import { MockERC20 } from "../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { LoanManagerFactory }     from "../contracts/LoanManagerFactory.sol";
 import { LoanManagerInitializer } from "../contracts/LoanManagerInitializer.sol";
 
-import { LoanManagerHarness } from "./harnesses/LoanManagerHarness.sol";
+import { LoanManagerHarness } from "./utils/Harnesses.sol";
 
 import { ILoanManagerStructs } from "./interfaces/ILoanManagerStructs.sol";
 
@@ -16,14 +16,14 @@ import {
     MockLoan,
     MockPool,
     MockPoolManager
-} from "./mocks/Mocks.sol";
+} from "./utils/Mocks.sol";
 
-contract LoanManagerTestBase is TestUtils {
+contract LoanManagerTestBase is Test {
 
     uint256 constant start = 5_000_000 seconds;
 
-    address governor     = address(new Address());
-    address poolDelegate = address(new Address());
+    address governor     = makeAddr("governor");
+    address poolDelegate = makeAddr("poolDelegate");
 
     address implementation = address(new LoanManagerHarness());
     address initializer    = address(new LoanManagerInitializer());

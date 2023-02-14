@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { Address, TestUtils } from "../modules/contract-test-utils/contracts/test.sol";
+import { Test } from "../modules/forge-std/src/Test.sol";
 
 import { LoanManager }            from "../contracts/LoanManager.sol";
 import { LoanManagerFactory }     from "../contracts/LoanManagerFactory.sol";
 import { LoanManagerInitializer } from "../contracts/LoanManagerInitializer.sol";
 
-import { MockGlobals, MockPool } from "./mocks/Mocks.sol";
+import { MockGlobals, MockPool } from "./utils/Mocks.sol";
 
-contract LoanManagerFactoryBase is TestUtils {
+contract LoanManagerFactoryBase is Test {
 
     address governor;
     address implementation;
@@ -21,7 +21,7 @@ contract LoanManagerFactoryBase is TestUtils {
     LoanManagerFactory factory;
 
     function setUp() public virtual {
-        governor       = address(new Address());
+        governor       = makeAddr("governor");
         implementation = address(new LoanManager());
         initializer    = address(new LoanManagerInitializer());
 
