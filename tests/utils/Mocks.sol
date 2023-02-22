@@ -1,9 +1,43 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
+import { Test } from "../../modules/forge-std/src/Test.sol";
+
 import { MockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
-import { LoanManagerStorage } from "../../contracts/LoanManagerStorage.sol";
+import { ILoanManager } from "../../contracts/interfaces/ILoanManager.sol";
+
+import { LoanManagerStorage }  from "../../contracts/LoanManagerStorage.sol";
+
+// TODO: Eventually propose this to `forge-std`.
+contract Spied is Test {
+
+    bool internal assertCalls;
+    bool internal captureCall;
+
+    uint256 callCount;
+
+    bytes[] internal calls;
+
+    modifier spied() {
+        if (captureCall) {
+            calls.push(msg.data);
+            captureCall = false;
+        } else {
+            if (assertCalls) {
+                assertEq(msg.data, calls[callCount++], "Unexpected call spied");
+            }
+
+            _;
+        }
+    }
+
+    function __expectCall() public {
+        assertCalls = true;
+        captureCall = true;
+    }
+
+}
 
 contract MockGlobals {
 
@@ -60,22 +94,30 @@ contract MockGlobals {
 
 }
 
-contract MockLoan {
+contract MockLoan is Spied {
 
     uint256 public paymentInterval;
 
-    uint40 internal _paymentDueDate;
+    uint40 _paymentDueDate;
 
-    uint256 internal _interest;
-    uint256 internal _lateInterest;
+    uint256 _principal;
+    uint256 _interest;
+    uint256 _lateInterest;
 
     function call(uint256) external view returns (uint40 paymentDueDate_) {
         paymentDueDate_ = _paymentDueDate;
     }
 
+    function fund() external spied returns (uint256 amount_, uint256 date_) {
+        ( amount_, date_ ) = ( _principal, _paymentDueDate );
+    }
+
     function paymentBreakdown() external view returns (uint256 interest_, uint256 lateInterest_) {
-        interest_     = _interest;
-        lateInterest_ = _lateInterest;
+        ( interest_, lateInterest_ ) = ( _interest, _lateInterest );
+    }
+
+    function paymentDueDate() external view returns (uint40 paymentDueDate_) {
+        paymentDueDate_ = _paymentDueDate;
     }
 
     function removeCall() external view returns (uint40 paymentDueDate_) {
@@ -96,6 +138,18 @@ contract MockLoan {
 
     function __setPaymentInterval(uint256 paymentInterval_) external {
         paymentInterval = paymentInterval_;
+    }
+
+    function __setPrincipal(uint256 principal_) external {
+        _principal = principal_;
+    }
+
+}
+
+contract MockReenteringLoan {
+
+     function fund() external returns (uint256 amount_, uint256 date_) {
+        ILoanManager(msg.sender).fund(address(this));
     }
 
 }
@@ -182,5 +236,5 @@ contract MockFactory {
     function __setIsInstance(bool isInstance_) external {
         _isInstance = isInstance_;
     }
-    
+
 }

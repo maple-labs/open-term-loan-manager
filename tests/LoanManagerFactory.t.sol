@@ -21,7 +21,7 @@ contract LoanManagerFactoryBase is Test {
     MockGlobals     globals;
     MockPool        pool;
     MockPoolManager poolManager;
-    MockFactory     poolManagerfactory;
+    MockFactory     poolManagerFactory;
 
     LoanManagerFactory factory;
 
@@ -33,7 +33,7 @@ contract LoanManagerFactoryBase is Test {
         globals            = new MockGlobals(governor);
         pool               = new MockPool();
         poolManager        = new MockPoolManager();
-        poolManagerfactory = new MockFactory();
+        poolManagerFactory = new MockFactory();
 
         vm.startPrank(governor);
         factory = new LoanManagerFactory(address(globals));
@@ -61,7 +61,7 @@ contract LoanManagerFactoryBase is Test {
 
     function test_createInstance_notPoolManager() external {
         globals.__setIsFactory(true);
-        poolManager.__setFactory(address(poolManagerfactory));
+        poolManager.__setFactory(address(poolManagerFactory));
 
         vm.prank(address(poolManager));
         vm.expectRevert("LMF:CI:NOT_PM");
@@ -87,8 +87,8 @@ contract LoanManagerFactoryBase is Test {
 
     function test_createInstance_withPoolManager() external {
         globals.__setIsFactory(true);
-        poolManager.__setFactory(address(poolManagerfactory));
-        poolManagerfactory.__setIsInstance(true);
+        poolManager.__setFactory(address(poolManagerFactory));
+        poolManagerFactory.__setIsInstance(true);
 
         vm.prank(address(poolManager));
 

@@ -29,6 +29,10 @@ contract LoanManagerHarness is LoanManager {
         payments[paymentId_].issuanceRate = issuanceRate_;
     }
 
+    function __setLocked(uint256 locked_) external {
+        _locked = locked_;
+    }
+
     function __setPaymentCounter(uint24 paymentCounter_) external {
         paymentCounter = paymentCounter_;
     }
@@ -44,6 +48,10 @@ contract LoanManagerHarness is LoanManager {
 
     function __setPaymentWithEarliestDueDate(uint24 paymentId_) external {
         paymentWithEarliestDueDate = paymentId_;
+    }
+
+    function __setPoolManager(address poolManager_) external {
+        poolManager = poolManager_;
     }
 
     function __setPrincipalOut(uint128 principalOut_) external {
