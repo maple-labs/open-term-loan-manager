@@ -380,7 +380,6 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         // uint256 delegateManagementFeeRate_ = IPoolManagerLike(poolManager).delegateManagementFeeRate();
         uint256 platformManagementFeeRate_ = 0;
         uint256 delegateManagementFeeRate_ = 0;
-
         uint256 managementFeeRate_         = platformManagementFeeRate_ + delegateManagementFeeRate_;
 
         // NOTE: If combined fee is greater than 100%, then cap delegate fee and clamp management fee.

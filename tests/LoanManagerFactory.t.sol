@@ -88,7 +88,7 @@ contract LoanManagerFactoryBase is Test {
     function test_createInstance_withPoolManager() external {
         globals.__setIsFactory(true);
         poolManager.__setFactory(address(poolManagerFactory));
-        poolManagerFactory.__setIsInstance(true);
+        poolManagerFactory.__setIsInstance(address(poolManager), true);
 
         vm.prank(address(poolManager));
 

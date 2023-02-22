@@ -39,6 +39,22 @@ contract Spied is Test {
 
 }
 
+contract MockFactory {
+
+    address public mapleGlobals;
+
+    mapping(address => bool) public isInstance;
+
+    function __setGlobals(address globals_) external {
+        mapleGlobals = globals_;
+    }
+
+    function __setIsInstance(address instance_, bool isInstance_) external {
+        isInstance[instance_] = isInstance_;
+    }
+
+}
+
 contract MockGlobals {
 
     bool internal _isFactory;
@@ -221,20 +237,6 @@ contract MockLiquidatorFactory {
 
     function createInstance(bytes calldata, bytes32) external returns (address instance_) {
         instance_ = address(new MockLiquidator());
-    }
-
-}
-
-contract MockFactory {
-
-    bool _isInstance;
-
-    function isInstance(address) external view returns (bool isInstance_) {
-        isInstance_ = _isInstance;
-    }
-
-    function __setIsInstance(bool isInstance_) external {
-        _isInstance = isInstance_;
     }
 
 }

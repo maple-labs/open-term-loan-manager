@@ -5,6 +5,14 @@ import { LoanManager } from "../../contracts/LoanManager.sol";
 
 contract LoanManagerHarness is LoanManager {
 
+    function __advanceGlobalPaymentAccounting() external {
+        _advanceGlobalPaymentAccounting();
+    }
+
+    function __queueNextPayment(address loan, uint256 startDate, uint256 nextPaymentDueDate) external {
+        issuanceRate = _queueNextPayment(loan, startDate, nextPaymentDueDate);
+    }
+
     function __setAccountedInterest(uint112 accountedInterest_) external {
         accountedInterest = accountedInterest_;
     }
@@ -15,6 +23,14 @@ contract LoanManagerHarness is LoanManager {
 
     function __setDomainStart(uint48 domainStart_) external {
         domainStart = domainStart_;
+    }
+
+    function __setFactory(address factory_) external {
+        _setFactory(factory_);
+    }
+
+    function __setFundsAsset(address asset_) external {
+        fundsAsset = asset_;
     }
 
     function __setIncomingNetInterest(uint256 paymentId_, uint128 incomingNetInterest_) external {
