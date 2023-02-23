@@ -166,6 +166,8 @@ contract MockLoan is Spied {
         paymentDueDate_ = _paymentDueDate;
     }
 
+    function repossess(address destination_) external returns (uint256 fundsRepossessed_) {}
+
     function removeImpairment() external spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
         ( paymentDueDate_, defaultDate_ ) = ( _paymentDueDate, _defaultDate );
     }

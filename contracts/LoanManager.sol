@@ -290,6 +290,8 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Loan Default Functions                                                                                                         ***/
     /**************************************************************************************************************************************/
 
+    // TODO: Different interface for PM to accommodate vs FT-LM
+    // TODO: Refactor internal functions used as we no longer need to liquidate the collateral as in fixed term loans 
     function triggerDefault(address loan_) external override returns (uint256 remainingLosses_, uint256 platformFees_) {
         require(msg.sender == poolManager, "LM:TD:NOT_PM");
 
