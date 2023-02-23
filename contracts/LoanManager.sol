@@ -199,9 +199,13 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Loan Impairment Functions                                                                                                      ***/
     /**************************************************************************************************************************************/
 
-    function impairLoan(address loan_, bool isGovernor_) external override {
-        require(msg.sender == poolManager,           "LM:IL:NOT_PM");
-        require(!IMapleLoanLike(loan_).isImpaired(), "LM:IL:IMPAIRED");
+    function impairLoan(address loan_) external override {
+        require(!IMapleGlobalsLike(globals()).protocolPaused(), "LM:IL:PAUSED");
+
+        bool isGovernor_ = msg.sender == governor();
+
+        require(isGovernor_ || msg.sender == poolDelegate(), "LM:IL:NO_AUTH");
+        require(!IMapleLoanLike(loan_).isImpaired(),         "LM:IL:IMPAIRED");
 
         // NOTE: Must get payment info prior to advancing payment accounting, because that will set issuance rate to 0.
         uint256 paymentId_ = paymentIdOf[loan_];
@@ -234,10 +238,20 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         IMapleLoanLike(loan_).impair();
     }
 
-    function removeLoanImpairment(address loan_, bool isCalledByGovernor_) external override nonReentrant {
-        require(msg.sender == poolManager, "LM:RLI:NOT_PM");
+    function removeLoanImpairment(address loan_) external override nonReentrant {
+        require(!IMapleGlobalsLike(globals()).protocolPaused(), "LM:RLI:PAUSED");
 
-        // TODO: The loan may also be called, and thus subject to a different payment due date
+        LiquidationInfo memory liquidationInfo_ = liquidationInfo[loan_];
+
+        require(
+            msg.sender == governor() ||
+            (!liquidationInfo_.triggeredByGovernor && msg.sender == poolDelegate()),
+            "LM:RLI:NO_AUTH"
+        );
+
+        // TODO: Consider using virtual variables here instead.
+        // TODO: Consider removing this condition.
+        // TODO: Consider adding require(isImpaired) check.
         require(
             block.timestamp <= IMapleLoanLike(loan_).datePaid() + IMapleLoanLike(loan_).paymentInterval(),
             "LM:RLI:PAST_DATE"
@@ -245,16 +259,11 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
         _advanceGlobalPaymentAccounting();
 
-        IMapleLoanLike(loan_).removeImpairment();
-
         uint24 paymentId_ = paymentIdOf[loan_];
 
         require(paymentId_ != 0, "LM:RLI:NOT_LOAN");
 
-        PaymentInfo memory paymentInfo_         = payments[paymentId_];
-        LiquidationInfo memory liquidationInfo_ = liquidationInfo[loan_];
-
-        require(!liquidationInfo_.triggeredByGovernor || isCalledByGovernor_, "LM:RLI:NO_AUTH");
+        PaymentInfo memory paymentInfo_ = payments[paymentId_];
 
         _revertLoanImpairment(liquidationInfo_);
 
@@ -275,6 +284,8 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
                 )
             )
         );
+
+        IMapleLoanLike(loan_).removeImpairment();
     }
 
     /**************************************************************************************************************************************/

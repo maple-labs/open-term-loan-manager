@@ -16,16 +16,18 @@ contract LoanManagerInitializer is ILoanManagerInitializer, LoanManagerStorage {
         calldata_ = abi.encode(pool_);
     }
 
-    fallback() external {
+    function _initialize(address pool_) internal {
         _locked = 1;
-
-        address pool_ = decodeArguments(msg.data);
 
         pool        = pool_;
         fundsAsset  = IPoolLike(pool_).asset();
         poolManager = IPoolLike(pool_).manager();
 
         emit Initialized(pool_);
+    }
+
+    fallback() external {
+        _initialize({pool_: decodeArguments(msg.data)});
     }
 
 }

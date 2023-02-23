@@ -90,17 +90,15 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
 
     /**
      *  @dev   Triggers the loan impairment for a loan.
-     *  @param loan_       Loan to trigger the loan impairment.
-     *  @param isGovernor_ True if called by the governor.
+     *  @param loan_ Loan to trigger the loan impairment.
      */
-    function impairLoan(address loan_, bool isGovernor_) external;
+    function impairLoan(address loan_) external;
 
     /**
      *  @dev   Removes the loan impairment for a loan.
-     *  @param loan_               Loan to remove the loan impairment.
-     *  @param isCalledByGovernor_ True if `impairLoan` was called by the governor.
+     *  @param loan_ Loan to remove the loan impairment.
      */
-    function removeLoanImpairment(address loan_, bool isCalledByGovernor_) external;
+    function removeLoanImpairment(address loan_) external;
 
     /**
      *  @dev    Triggers the default of a loan.

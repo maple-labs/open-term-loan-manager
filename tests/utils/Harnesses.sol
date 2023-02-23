@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { LoanManager } from "../../contracts/LoanManager.sol";
+import { LoanManager }            from "../../contracts/LoanManager.sol";
+import { LoanManagerInitializer } from "../../contracts/LoanManagerInitializer.sol";
 
-contract LoanManagerHarness is LoanManager {
+contract LoanManagerHarness is LoanManager, LoanManagerInitializer {
+
+    function __initialize(address pool_) external {
+        _initialize(pool_);
+    }
 
     function __advanceGlobalPaymentAccounting() external {
         _advanceGlobalPaymentAccounting();
@@ -47,6 +52,23 @@ contract LoanManagerHarness is LoanManager {
 
     function __setLocked(uint256 locked_) external {
         _locked = locked_;
+    }
+
+    function __setLiquidationInfo(
+        address loan_,
+        bool    isGovernor_,
+        uint256 principal_,
+        uint256 netInterest_,
+        uint256 netLateInterest_,
+        uint256 platformFees_
+    ) external {
+        liquidationInfo[loan_] = LiquidationInfo({
+            triggeredByGovernor: isGovernor_,
+            principal:           _uint128(principal_),
+            interest:            _uint120(netInterest_),
+            lateInterest:        netLateInterest_,
+            platformFees:        _uint96(platformFees_)
+        });
     }
 
     function __setPaymentCounter(uint24 paymentCounter_) external {

@@ -18,10 +18,10 @@ contract LoanManagerFactoryBase is Test {
     address asset   = makeAddr("asset");
     address manager = makeAddr("manager");
 
+    MockFactory     poolManagerFactory;
     MockGlobals     globals;
     MockPool        pool;
     MockPoolManager poolManager;
-    MockFactory     poolManagerFactory;
 
     LoanManagerFactory factory;
 
@@ -60,7 +60,7 @@ contract LoanManagerFactoryBase is Test {
     }
 
     function test_createInstance_notPoolManager() external {
-        globals.__setIsFactory(true);
+        globals.__setIsFactory("POOL_MANAGER", address(poolManagerFactory), true);
         poolManager.__setFactory(address(poolManagerFactory));
 
         vm.prank(address(poolManager));
@@ -86,7 +86,7 @@ contract LoanManagerFactoryBase is Test {
     }
 
     function test_createInstance_withPoolManager() external {
-        globals.__setIsFactory(true);
+        globals.__setIsFactory("POOL_MANAGER", address(poolManagerFactory), true);
         poolManager.__setFactory(address(poolManagerFactory));
         poolManagerFactory.__setIsInstance(address(poolManager), true);
 

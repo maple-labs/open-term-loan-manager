@@ -57,7 +57,6 @@ contract MockFactory {
 
 contract MockGlobals {
 
-    bool internal _isFactory;
     bool internal _isValidScheduledCall;
 
     address public governor;
@@ -70,24 +69,26 @@ contract MockGlobals {
     mapping(address => uint256) public getLatestPrice;
     mapping(address => uint256) public platformManagementFeeRate;
 
+    mapping(bytes32 => mapping(address => bool)) public isFactory;
+
     constructor(address governor_) {
         governor = governor_;
-    }
-
-    function isFactory(bytes32, address) external view returns (bool isFactory_) {
-        isFactory_ = _isFactory;
     }
 
     function isValidScheduledCall(address, address, bytes32, bytes calldata) external view returns (bool isValid_) {
         isValid_ = _isValidScheduledCall;
     }
 
-    function __setIsFactory(bool isFactory_) external {
-        _isFactory = isFactory_;
+    function __setIsFactory(bytes32 factoryType_, address factory_, bool isFactory_) external {
+        isFactory[factoryType_][factory_] = isFactory_;
     }
 
     function __setIsValidScheduledCall(bool isValid_) external {
         _isValidScheduledCall = isValid_;
+    }
+
+    function setMapleTreasury(address treasury_) external {
+        mapleTreasury = treasury_;
     }
 
     function __setProtocolPaused(bool paused_) external {
@@ -96,10 +97,6 @@ contract MockGlobals {
 
     function setPlatformManagementFeeRate(address poolManager_, uint256 platformManagementFeeRate_) external {
         platformManagementFeeRate[poolManager_] = platformManagementFeeRate_;
-    }
-
-    function setMapleTreasury(address treasury_) external {
-        mapleTreasury = treasury_;
     }
 
     function setValidPoolDeployer(address poolDeployer_, bool isValid_) external {
@@ -115,17 +112,27 @@ contract MockLoan is Spied {
     uint256 public paymentInterval;
 
     uint40 _paymentDueDate;
+    uint40 _dateImpaired;
+    uint40 _defaultDate;
 
     uint256 _principal;
     uint256 _interest;
     uint256 _lateInterest;
 
-    function call(uint256) external view returns (uint40 paymentDueDate_) {
+    function call(uint256) external spied returns (uint40 paymentDueDate_) {
         paymentDueDate_ = _paymentDueDate;
     }
 
     function fund() external spied returns (uint256 amount_, uint256 date_) {
         ( amount_, date_ ) = ( _principal, _paymentDueDate );
+    }
+
+    function impair() external spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
+        ( paymentDueDate_, defaultDate_ ) = ( _paymentDueDate, _defaultDate );
+    }
+
+    function isImpaired() external view returns (bool isImpaired_) {
+        isImpaired_ = _dateImpaired != 0;
     }
 
     function paymentBreakdown() external view returns (uint256 interest_, uint256 lateInterest_) {
@@ -136,8 +143,20 @@ contract MockLoan is Spied {
         paymentDueDate_ = _paymentDueDate;
     }
 
-    function removeCall() external view returns (uint40 paymentDueDate_) {
+    function principal() external view returns (uint256 principal_) {
+        principal_ = _principal;
+    }
+
+    function removeCall() external spied returns (uint40 paymentDueDate_) {
         paymentDueDate_ = _paymentDueDate;
+    }
+
+    function __setDateImpaired() external {
+        _dateImpaired = uint40(block.timestamp);
+    }
+
+    function __setDefaultDate() external {
+        _defaultDate = uint40(block.timestamp);
     }
 
     function __setInterest(uint256 interest_) external {
@@ -195,15 +214,10 @@ contract MockPool {
 
 contract MockPoolManager {
 
-    address _factory;
-
     address public poolDelegate;
+    address public factory;
 
     uint256 public delegateManagementFeeRate;
-
-    function factory() external view returns (address factory_) {
-        factory_ = _factory;
-    }
 
     function hasSufficientCover() external pure returns (bool hasSufficientCover_) {
         hasSufficientCover_ = true;
@@ -214,7 +228,7 @@ contract MockPoolManager {
     }
 
     function __setFactory(address factory_) external {
-        _factory = factory_;
+        factory = factory_;
     }
 
     function __setPoolDelegate(address poolDelegate_) external {

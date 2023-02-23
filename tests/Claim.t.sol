@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { Test }      from "../modules/forge-std/src/Test.sol";
 import { MockERC20 } from "../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { LoanManagerHarness } from "./utils/Harnesses.sol";
-import { Utils }              from "./utils/Utils.sol";
+import { TestBase }           from "./utils/TestBase.sol";
 
 import { MockGlobals, MockLoan, MockPoolManager, MockFactory } from "./utils/Mocks.sol";
 
-contract ClaimTestBase is Test, Utils {
+contract ClaimTestBase is TestBase {
 
     LoanManagerHarness loanManager = new LoanManagerHarness();
     MockERC20          asset       = new MockERC20("A", "A", 18);
@@ -61,6 +60,8 @@ contract ClaimTests is ClaimTestBase {
             domainStart:                0,
             domainEnd:                  0,
             accountedInterest:          0,
+            accruedInterest:            0,
+            assetsUnderManagement:      0,
             principalOut:               0,
             unrealizedLosses:           0,
             issuanceRate:               0
@@ -88,21 +89,24 @@ contract ClaimTests is ClaimTestBase {
             domainStart:                uint40(start),
             domainEnd:                  uint40(start + paymentInterval),
             accountedInterest:          0,
+            accruedInterest:            0,
+            assetsUnderManagement:      uint128(principal),
             principalOut:               uint128(principal),
             unrealizedLosses:           0,
             issuanceRate:               interest1 * 1e30 / paymentInterval
         });
 
         assertLoanState({
-            loanManager:         address(loanManager),
-            loan:                address(loan),
-            paymentId:           1,
-            previousPaymentId:   0,
-            nextPaymentId:       0,
-            startDate:           uint40(start),
-            paymentDueDate:      uint40(start + paymentInterval),
-            incomingNetInterest: uint128(interest1),
-            issuanceRate:        interest1 * 1e30 / paymentInterval
+            loanManager:                 address(loanManager),
+            loan:                        address(loan),
+            paymentId:                   1,
+            previousPaymentId:           0,
+            nextPaymentId:               0,
+            startDate:                   uint40(start),
+            paymentInfoPaymentDueDate:   uint40(start + paymentInterval),
+            sortedPaymentPaymentDueDate: uint40(start + paymentInterval),
+            incomingNetInterest:         uint128(interest1),
+            issuanceRate:                interest1 * 1e30 / paymentInterval
         });
 
         // Simulate a payment in the loan
@@ -122,21 +126,24 @@ contract ClaimTests is ClaimTestBase {
             domainStart:                uint40(start + paymentInterval),
             domainEnd:                  uint40(start + 2 * paymentInterval),
             accountedInterest:          0,
+            accruedInterest:            0,
+            assetsUnderManagement:      uint128(principal),
             principalOut:               uint128(principal),
             unrealizedLosses:           0,
             issuanceRate:               interest2 * 1e30 / paymentInterval
         });
 
         assertLoanState({
-            loanManager:         address(loanManager),
-            loan:                address(loan),
-            paymentId:           2,
-            previousPaymentId:   0,
-            nextPaymentId:       0,
-            startDate:           uint40(start + paymentInterval),
-            paymentDueDate:      uint40(start + (paymentInterval * 2)),
-            incomingNetInterest: uint128(interest2),
-            issuanceRate:        interest2 * 1e30 / paymentInterval
+            loanManager:                 address(loanManager),
+            loan:                        address(loan),
+            paymentId:                   2,
+            previousPaymentId:           0,
+            nextPaymentId:               0,
+            startDate:                   uint40(start + paymentInterval),
+            paymentInfoPaymentDueDate:   uint40(start + (paymentInterval * 2)),
+            sortedPaymentPaymentDueDate: uint40(start + (paymentInterval * 2)),
+            incomingNetInterest:         uint128(interest2),
+            issuanceRate:                interest2 * 1e30 / paymentInterval
         });
     }
 

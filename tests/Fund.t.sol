@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { console2, Test } from "../modules/forge-std/src/Test.sol";
-
 import { ILoanManagerStructs } from "./interfaces/ILoanManagerStructs.sol";
 
 import { LoanManagerHarness }                            from "./utils/Harnesses.sol";
 import { MockLoan, MockPoolManager, MockReenteringLoan } from "./utils/Mocks.sol";
-import { Utils }                                         from "./utils/Utils.sol";
+import { TestBase }                                      from "./utils/TestBase.sol";
 
-contract FundFailureTests is Test, Utils {
+contract FundFailureTests is TestBase {
 
     LoanManagerHarness loanManager = new LoanManagerHarness();
     MockLoan           loan        = new MockLoan();
@@ -37,7 +35,7 @@ contract FundFailureTests is Test, Utils {
 
 }
 
-contract FundTests is Test, Utils {
+contract FundTests is TestBase {
 
     uint256 start;
 
@@ -57,14 +55,16 @@ contract FundTests is Test, Utils {
 
         // Assert pre-state
         assertGlobalState({
-            loanManager:                address(loanManager), 
-            paymentCounter:             0, 
-            paymentWithEarliestDueDate: 0, 
-            domainStart:                0, 
-            domainEnd:                  0, 
-            accountedInterest:          0, 
-            principalOut:               0, 
-            unrealizedLosses:           0, 
+            loanManager:                address(loanManager),
+            paymentCounter:             0,
+            paymentWithEarliestDueDate: 0,
+            domainStart:                0,
+            domainEnd:                  0,
+            accountedInterest:          0,
+            accruedInterest:            0,
+            assetsUnderManagement:      0,
+            principalOut:               0,
+            unrealizedLosses:           0,
             issuanceRate:               0
         });
     }
@@ -103,27 +103,30 @@ contract FundTests is Test, Utils {
             ILoanManagerStructs.SortedPayment memory sortedPayment = ILoanManagerStructs(address(loanManager)).sortedPayments(i);
 
             assertGlobalState({
-                loanManager:                address(loanManager), 
-                paymentCounter:             uint24(i), 
-                paymentWithEarliestDueDate: uint24(lowestIntervalIndex), 
-                domainStart:                uint48(start), 
-                domainEnd:                  uint48(start + lowestInterval), 
-                accountedInterest:          0, 
-                principalOut:               uint128(currentPrincipal), 
-                unrealizedLosses:           0, 
+                loanManager:                address(loanManager),
+                paymentCounter:             uint24(i),
+                paymentWithEarliestDueDate: uint24(lowestIntervalIndex),
+                domainStart:                uint48(start),
+                domainEnd:                  uint48(start + lowestInterval),
+                accountedInterest:          0,
+                accruedInterest:            0,
+                assetsUnderManagement:      uint128(currentPrincipal),
+                principalOut:               uint128(currentPrincipal),
+                unrealizedLosses:           0,
                 issuanceRate:               currentRate
             });
 
             assertLoanState({
-                loanManager:         address(loanManager),
-                loan:                address(loan_),
-                paymentId:           uint24(i),
-                previousPaymentId:   sortedPayment.previous,
-                nextPaymentId:       sortedPayment.next,  
-                startDate:           uint40(start),
-                paymentDueDate:      uint40(start + paymentInterval_),
-                incomingNetInterest: uint128(interest_),
-                issuanceRate:        interest_ * 1e30 / paymentInterval_
+                loanManager:                 address(loanManager),
+                loan:                        address(loan_),
+                paymentId:                   uint24(i),
+                previousPaymentId:           sortedPayment.previous,
+                nextPaymentId:               sortedPayment.next,
+                startDate:                   uint40(start),
+                paymentInfoPaymentDueDate:   uint40(start + paymentInterval_),
+                sortedPaymentPaymentDueDate: uint40(start + paymentInterval_),
+                incomingNetInterest:         uint128(interest_),
+                issuanceRate:                interest_ * 1e30 / paymentInterval_
             });
 
         }
@@ -132,6 +135,6 @@ contract FundTests is Test, Utils {
 
     function randomize(uint256 seed, uint256 salt1, string memory salt2) internal pure returns (uint256) {
         return uint256(keccak256(abi.encodePacked(seed, salt1, salt2)));
-    }   
+    }
 
 }
