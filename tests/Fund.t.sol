@@ -4,8 +4,15 @@ pragma solidity 0.8.7;
 import { ILoanManagerStructs } from "./interfaces/ILoanManagerStructs.sol";
 
 import { LoanManagerHarness }                            from "./utils/Harnesses.sol";
-import { MockLoan, MockPoolManager, MockReenteringLoan } from "./utils/Mocks.sol";
 import { TestBase }                                      from "./utils/TestBase.sol";
+
+import {
+    MockFactory,
+    MockGlobals,
+    MockLoan,
+    MockPoolManager,
+    MockReenteringLoan
+} from "./utils/Mocks.sol";
 
 contract FundFailureTests is TestBase {
 
@@ -44,14 +51,23 @@ contract FundTests is TestBase {
     uint256 currentPrincipal;
 
     LoanManagerHarness loanManager = new LoanManagerHarness();
+    MockFactory        factory     = new MockFactory();
+    MockGlobals        globals     = new MockGlobals(makeAddr("governor"));
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
         start       = block.timestamp;
         poolManager = new MockPoolManager();
 
+        factory.__setGlobals(address(globals));
+
+        loanManager.__setFactory(address(factory));
         loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
+
+        // Set both fees to sum up to 10%
+        globals.setPlatformManagementFeeRate(address(poolManager), 0.06e6);
+        poolManager.setDelegateManagementFeeRate(0.04e6);
 
         // Assert pre-state
         assertGlobalState({
@@ -77,8 +93,11 @@ contract FundTests is TestBase {
         for (uint256 i = 1; i < seed % 50; i++) {
             // Bound each loan parameter
             uint256 principal_       = bound(randomize(seed, i, "principal"), 1e6,       1e30);
-            uint256 interest_        = bound(randomize(seed, i, "interest"),  1e6,       1e30);
+            uint256 grossInterest_   = bound(randomize(seed, i, "interest"),  1e6,       1e30);
             uint256 paymentInterval_ = bound(randomize(seed, i, "interval"),  1_000_000, 365 days);
+
+            // Calculate net interest
+            uint256 interest_ = grossInterest_ * 0.9e6 / 1e6;
 
             currentPrincipal += principal_;
             currentRate      += interest_ * 1e30 / paymentInterval_;
@@ -92,7 +111,7 @@ contract FundTests is TestBase {
 
             loan_.__setPrincipal(principal_);
             loan_.__setPaymentDueDate(block.timestamp + paymentInterval_);
-            loan_.__setInterest(interest_);
+            loan_.__setInterest(grossInterest_);
 
             loan_.__expectCall();
             loan_.fund();

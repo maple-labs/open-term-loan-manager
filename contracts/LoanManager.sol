@@ -114,7 +114,14 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Loan Payment Claim Function                                                                                                    ***/
     /**************************************************************************************************************************************/
 
-    function claim(uint256 principal_, uint256 interest_, uint40 nextPaymentDueDate_) external override nonReentrant {
+    function claim(
+        uint256 principal_,
+        uint256 interest_,
+        uint256 delegateServiceFee_,
+        uint256 platformServiceFee_,
+        uint40 nextPaymentDueDate_)
+        external override nonReentrant
+    {
         uint24 paymentId_              = paymentIdOf[msg.sender];
         uint48 previousPaymentDueDate_ = payments[paymentId_].paymentDueDate;
 
@@ -126,7 +133,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         _advanceGlobalPaymentAccounting();
 
         // 2. Transfer the funds from the loan to the `pool`, `poolDelegate`, and `mapleTreasury`.
-        _distributeClaimedFunds(msg.sender, principal_, interest_);
+        _distributeClaimedFunds(msg.sender, principal_, interest_, delegateServiceFee_, platformServiceFee_);
 
         // 3. If principal has been paid back, decrement `principalOut`.
         if (principal_ != 0) {
@@ -291,7 +298,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /**************************************************************************************************************************************/
 
     // TODO: Different interface for PM to accommodate vs FT-LM
-    // TODO: Refactor internal functions used as we no longer need to liquidate the collateral as in fixed term loans 
+    // TODO: Refactor internal functions used as we no longer need to liquidate the collateral as in fixed term loans
     function triggerDefault(address loan_) external override returns (uint256 remainingLosses_, uint256 platformFees_) {
         require(msg.sender == poolManager, "LM:TD:NOT_PM");
 
@@ -386,11 +393,8 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     }
 
     function _queueNextPayment(address loan_, uint256 startDate_, uint256 nextPaymentDueDate_) internal returns (uint256 newRate_) {
-        // TODO: Commenting this for now as the fees are being re-worked.
-        // uint256 platformManagementFeeRate_ = IMapleGlobalsLike(globals()).platformManagementFeeRate(poolManager);
-        // uint256 delegateManagementFeeRate_ = IPoolManagerLike(poolManager).delegateManagementFeeRate();
-        uint256 platformManagementFeeRate_ = 0;
-        uint256 delegateManagementFeeRate_ = 0;
+        uint256 platformManagementFeeRate_ = IMapleGlobalsLike(globals()).platformManagementFeeRate(poolManager);
+        uint256 delegateManagementFeeRate_ = IPoolManagerLike(poolManager).delegateManagementFeeRate();
         uint256 managementFeeRate_         = platformManagementFeeRate_ + delegateManagementFeeRate_;
 
         // NOTE: If combined fee is greater than 100%, then cap delegate fee and clamp management fee.
@@ -520,14 +524,15 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
     }
 
-    function _distributeClaimedFunds(address loan_, uint256 principal_, uint256 interest_) internal {
+    function _distributeClaimedFunds(address loan_, uint256 principal_, uint256 interest_, uint256 delegateServiceFee_, uint256 platformServiceFee_) internal {
         uint256 paymentId_ = paymentIdOf[loan_];
 
         require(paymentId_ != 0, "LM:DCF:NOT_LOAN");
 
-        uint256 platformFee_ = interest_ * payments[paymentId_].platformManagementFeeRate / HUNDRED_PERCENT;
+        uint256 platformManagementFee_ = interest_ * payments[paymentId_].platformManagementFeeRate / HUNDRED_PERCENT;
 
-        uint256 delegateFee_ = IPoolManagerLike(poolManager).hasSufficientCover()
+        // TODO: Consider doing the same logic for service fees as well.
+        uint256 delegateManagementFee_ = IPoolManagerLike(poolManager).hasSufficientCover()
             ? interest_ * payments[paymentId_].delegateManagementFeeRate / HUNDRED_PERCENT
             : 0;
 
@@ -535,14 +540,16 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
         require(mapleTreasury_ != address(0), "LM:DCF:ZERO_ADDRESS");
 
-        uint256 netInterest_ = interest_ - platformFee_ - delegateFee_;
+        uint256 netInterest_  = interest_ - platformManagementFee_ - delegateManagementFee_;
+        uint256 delegateFee_  = delegateServiceFee_ + delegateManagementFee_;
+        uint256 platformFee_  = platformServiceFee_ + platformManagementFee_;
 
         require(ERC20Helper.transfer(fundsAsset, pool,           principal_ + netInterest_), "LM:DCF:POOL_TRANSFER");
         require(ERC20Helper.transfer(fundsAsset, mapleTreasury_, platformFee_),              "LM:DCF:MT_TRANSFER");
 
         require(delegateFee_ == 0 || ERC20Helper.transfer(fundsAsset, poolDelegate(), delegateFee_), "LM:DCF:PD_TRANSFER");
 
-        emit ManagementFeesPaid(loan_, delegateFee_, platformFee_);
+        emit ManagementFeesPaid(loan_, delegateFee_, platformManagementFee_);
         emit FundsDistributed(loan_, principal_, netInterest_);
     }
 

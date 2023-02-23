@@ -14,6 +14,16 @@ contract LoanManagerHarness is LoanManager, LoanManagerInitializer {
         _advanceGlobalPaymentAccounting();
     }
 
+    function __distributeClaimedFunds(
+        address loan_,
+        uint256 principal_,
+        uint256 interest_,
+        uint256 delegateServiceFee_,
+        uint256 platformServiceFee_
+    ) external {
+        _distributeClaimedFunds(loan_, principal_, interest_, delegateServiceFee_, platformServiceFee_);
+    }
+
     function __queueNextPayment(address loan, uint256 startDate, uint256 nextPaymentDueDate) external {
         issuanceRate = _queueNextPayment(loan, startDate, nextPaymentDueDate);
     }
@@ -86,6 +96,10 @@ contract LoanManagerHarness is LoanManager, LoanManagerInitializer {
 
     function __setPaymentWithEarliestDueDate(uint24 paymentId_) external {
         paymentWithEarliestDueDate = paymentId_;
+    }
+
+    function __setPool(address pool_) external {
+        pool = pool_;
     }
 
     function __setPoolManager(address poolManager_) external {

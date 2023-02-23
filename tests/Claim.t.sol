@@ -27,6 +27,10 @@ contract ClaimTestBase is TestBase {
         loanManager.__setFundsAsset(address(asset));
         loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
+
+        // Set Management Fees
+        globals.setPlatformManagementFeeRate(address(poolManager), 0.06e6);
+        poolManager.setDelegateManagementFeeRate(0.04e6);
     }
 
 }
@@ -35,17 +39,19 @@ contract ClaimFailureTests is ClaimTestBase {
 
     function test_claim_notLoan() public {
         vm.expectRevert("LM:C:NOT_LOAN");
-        loanManager.claim(0, 100_000e6, uint40(block.timestamp + 60 days));
+        loanManager.claim(0, 100_000e6, 10e6, 20e6, uint40(block.timestamp + 60 days));
     }
 
 }
 
 contract ClaimTests is ClaimTestBase {
 
-    uint256 constant interest1       = 100e6;
-    uint256 constant interest2       = 200e6;
-    uint256 constant paymentInterval = 1_000_000;
-    uint256 constant principal       = 2_000_000e6;
+    uint256 constant interest1          = 100e6;
+    uint256 constant interest2          = 200e6;
+    uint256 constant paymentInterval    = 1_000_000;
+    uint256 constant principal          = 2_000_000e6;
+    uint256 constant delegateServiceFee = 50e6;
+    uint256 constant platformServiceFee = 100e6;
 
     uint256 start;
 
@@ -81,6 +87,8 @@ contract ClaimTests is ClaimTestBase {
         vm.prank(address(poolManager));
         loanManager.fund(address(loan));
 
+        uint256 netInterest1 = interest1 * 0.9e6 / 1e6;
+
         // The new payment should been added
         assertGlobalState({
             loanManager:                address(loanManager),
@@ -93,31 +101,33 @@ contract ClaimTests is ClaimTestBase {
             assetsUnderManagement:      uint128(principal),
             principalOut:               uint128(principal),
             unrealizedLosses:           0,
-            issuanceRate:               interest1 * 1e30 / paymentInterval
+            issuanceRate:               netInterest1 * 1e30 / paymentInterval
         });
 
         assertLoanState({
-            loanManager:                 address(loanManager),
+            loanManager:         address(loanManager),
             loan:                        address(loan),
             paymentId:                   1,
             previousPaymentId:           0,
             nextPaymentId:               0,
-            startDate:                   uint40(start),
-            paymentInfoPaymentDueDate:   uint40(start + paymentInterval),
-            sortedPaymentPaymentDueDate: uint40(start + paymentInterval),
-            incomingNetInterest:         uint128(interest1),
-            issuanceRate:                interest1 * 1e30 / paymentInterval
+            startDate:                   start,
+            paymentInfoPaymentDueDate:   start + paymentInterval,
+            sortedPaymentPaymentDueDate: start + paymentInterval,
+            incomingNetInterest:         netInterest1,
+            issuanceRate:                netInterest1 * 1e30 / paymentInterval
         });
 
         // Simulate a payment in the loan
         vm.warp(start + paymentInterval);
-        asset.mint(address(loanManager), interest1);
+        asset.mint(address(loanManager), interest1 + platformServiceFee + delegateServiceFee);
 
         loan.__setPaymentDueDate(start + 2 * paymentInterval);
         loan.__setInterest(interest2);
 
+        uint256 netInterest2 = interest2 * 0.9e6 / 1e6;
+
         vm.prank(address(loan));
-        loanManager.claim(0, interest1, uint40(start + 2 * paymentInterval));
+        loanManager.claim(0, interest1, 10e6, 20e6, uint40(start + 2 * paymentInterval));
 
         assertGlobalState({
             loanManager:                address(loanManager),
@@ -130,7 +140,7 @@ contract ClaimTests is ClaimTestBase {
             assetsUnderManagement:      uint128(principal),
             principalOut:               uint128(principal),
             unrealizedLosses:           0,
-            issuanceRate:               interest2 * 1e30 / paymentInterval
+            issuanceRate:               netInterest2 * 1e30 / paymentInterval
         });
 
         assertLoanState({
@@ -139,11 +149,11 @@ contract ClaimTests is ClaimTestBase {
             paymentId:                   2,
             previousPaymentId:           0,
             nextPaymentId:               0,
-            startDate:                   uint40(start + paymentInterval),
-            paymentInfoPaymentDueDate:   uint40(start + (paymentInterval * 2)),
-            sortedPaymentPaymentDueDate: uint40(start + (paymentInterval * 2)),
-            incomingNetInterest:         uint128(interest2),
-            issuanceRate:                interest2 * 1e30 / paymentInterval
+            startDate:                   start + paymentInterval,
+            paymentInfoPaymentDueDate:   start + (paymentInterval * 2),
+            sortedPaymentPaymentDueDate: start + (paymentInterval * 2),
+            incomingNetInterest:         netInterest2,
+            issuanceRate:                netInterest2 * 1e30 / paymentInterval
         });
     }
 

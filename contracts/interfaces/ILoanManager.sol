@@ -76,11 +76,19 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
 
     /**
      *  @dev   Called by loans when payments are made, updating the accounting.
-     *  @param principal_      The amount of principal paid.
-     *  @param interest_       The amount of interest paid.
-     *  @param paymentDueDate_ The new payment due date.
+     *  @param principal_          The amount of principal paid.
+     *  @param interest_           The amount of interest paid.
+     *  @param platformServiceFee_ The amount of platform service fee paid.
+     *  @param delegateServiceFee_ The amount of delegate service fee paid.
+     *  @param paymentDueDate_     The new payment due date.
      */
-    function claim(uint256 principal_, uint256 interest_, uint40 paymentDueDate_) external;
+    function claim(
+        uint256 principal_,
+        uint256 interest_,
+        uint256 delegateServiceFee_,
+        uint256 platformServiceFee_,
+        uint40  paymentDueDate_
+    ) external;
 
     /**
      *  @dev   Funds a new loan.
