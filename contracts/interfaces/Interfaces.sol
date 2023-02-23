@@ -54,11 +54,15 @@ interface IMapleLoanLike {
 
     function datePaid() external view returns (uint40 datePaid_);
 
+    function defaultDate() external view returns (uint40 paymentDefaultDate_);
+
     function fund() external returns (uint256 fundsLent_, uint40 paymentDefaultDate_);
 
     function isImpaired() external view returns (bool isImpaired_);
 
     function impair() external returns (uint40 paymentDueDate_);
+
+    function normalPaymentDueDate() external returns (uint40 paymentDueDate_);
 
     function paymentDueDate() external view returns (uint40 paymentDueDate_);
 

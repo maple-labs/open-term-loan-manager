@@ -4,6 +4,7 @@ pragma solidity 0.8.7;
 import { Test } from "../../modules/forge-std/src/Test.sol";
 
 import { MockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
+import { Test }      from "../../modules/forge-std/src/Test.sol";
 
 import { ILoanManager } from "../../contracts/interfaces/ILoanManager.sol";
 
@@ -111,9 +112,11 @@ contract MockLoan is Spied {
 
     uint256 public paymentInterval;
 
-    uint40 _paymentDueDate;
-    uint40 _dateImpaired;
     uint40 _defaultDate;
+    uint40 _dateImpaired;
+    uint40 _datePaid;
+    uint40 _normalPaymentDueDate;
+    uint40 _paymentDueDate;
 
     uint256 _principal;
     uint256 _interest;
@@ -121,6 +124,14 @@ contract MockLoan is Spied {
 
     function call(uint256) external spied returns (uint40 paymentDueDate_) {
         paymentDueDate_ = _paymentDueDate;
+    }
+
+    function datePaid() external view returns (uint40 datePaid_) {
+        datePaid_ = _datePaid;
+    }
+
+    function defaultDate() external view returns (uint40 defaultDate_) {
+        defaultDate_ = _defaultDate;
     }
 
     function fund() external spied returns (uint256 amount_, uint256 date_) {
@@ -135,6 +146,10 @@ contract MockLoan is Spied {
         isImpaired_ = _dateImpaired != 0;
     }
 
+    function normalPaymentDueDate() external view returns (uint40 paymentDueDate_) {
+        paymentDueDate_ = _normalPaymentDueDate;
+    }
+
     function paymentBreakdown() external view returns (uint256 interest_, uint256 lateInterest_) {
         ( interest_, lateInterest_ ) = ( _interest, _lateInterest );
     }
@@ -147,16 +162,24 @@ contract MockLoan is Spied {
         principal_ = _principal;
     }
 
-    function removeCall() external spied returns (uint40 paymentDueDate_) {
+    function removeCall() external view returns (uint40 paymentDueDate_) {
         paymentDueDate_ = _paymentDueDate;
+    }
+
+    function removeImpairment() external spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
+        ( paymentDueDate_, defaultDate_ ) = ( _paymentDueDate, _defaultDate );
     }
 
     function __setDateImpaired() external {
         _dateImpaired = uint40(block.timestamp);
     }
 
-    function __setDefaultDate() external {
-        _defaultDate = uint40(block.timestamp);
+    function __setDatePaid(uint256 datePaid_) external {
+        _datePaid = uint40(datePaid_);
+    }
+
+    function __setDefaultDate(uint256 defaultDate_) external {
+        _defaultDate = uint40(defaultDate_);
     }
 
     function __setInterest(uint256 interest_) external {
@@ -165,6 +188,10 @@ contract MockLoan is Spied {
 
     function __setLateInterest(uint256 lateInterest_) external {
         _lateInterest = lateInterest_;
+    }
+
+    function __setNormalPaymentDueDate(uint256 normalPaymentDueDate_) external {
+        _normalPaymentDueDate = uint40(normalPaymentDueDate_);
     }
 
     function __setPaymentDueDate(uint256 paymentDueDate_) external {
@@ -254,3 +281,4 @@ contract MockLiquidatorFactory {
     }
 
 }
+

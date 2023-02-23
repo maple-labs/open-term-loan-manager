@@ -252,10 +252,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         // TODO: Consider using virtual variables here instead.
         // TODO: Consider removing this condition.
         // TODO: Consider adding require(isImpaired) check.
-        require(
-            block.timestamp <= IMapleLoanLike(loan_).datePaid() + IMapleLoanLike(loan_).paymentInterval(),
-            "LM:RLI:PAST_DATE"
-        );
+        require(block.timestamp <= IMapleLoanLike(loan_).normalPaymentDueDate(), "LM:RLI:PAST_DATE");
 
         _advanceGlobalPaymentAccounting();
 
@@ -270,6 +267,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         delete liquidationInfo[loan_];
         delete payments[paymentId_];
 
+        // TODO: Consider adding virtual variable to payment list instead of cached variable
         payments[paymentIdOf[loan_] = _addPaymentToList(paymentInfo_.paymentDueDate)] = paymentInfo_;
 
         // Discretely update missing interest as if payment was always part of the list.
