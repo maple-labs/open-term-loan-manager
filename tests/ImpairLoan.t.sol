@@ -42,8 +42,10 @@ contract ImpairLoanBase is TestBase {
         loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
 
+        poolManager.__setAsset(address(asset));
         poolManager.__setPoolDelegate(poolDelegate);
     }
+
 }
 
 contract ImpairLoanFailureTests is ImpairLoanBase {
@@ -91,8 +93,8 @@ contract ImpairLoanSuccessTests is ImpairLoanBase {
         loan.__setPaymentDueDate(block.timestamp + duration);
         loan.__setInterest(expectedInterest);
 
-        vm.prank(address(poolManager));
-        loanManager.fund(address(loan));
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan), principal);
 
         assertGlobalState({
             loanManager:                address(loanManager),
@@ -269,8 +271,8 @@ contract ImpairLoanFuzzTests is ImpairLoanBase {
         loan.__setPaymentDueDate(block.timestamp + duration);
         loan.__setInterest(expectedInterest);
 
-        vm.prank(address(poolManager));
-        loanManager.fund(address(loan));
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan), principal);
 
         uint256 expectedIssuanceRate = (expectedInterest * 1e30) / duration;
 
@@ -383,8 +385,8 @@ contract ImpairLoanFuzzTests is ImpairLoanBase {
         loan.__setPaymentDueDate(block.timestamp + duration);
         loan.__setInterest(expectedInterest);
 
-        vm.prank(address(poolManager));
-        loanManager.fund(address(loan));
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan), principal);
 
         uint256 expectedIssuanceRate = (expectedInterest * 1e30) / duration;
 

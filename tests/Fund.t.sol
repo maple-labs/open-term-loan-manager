@@ -1,48 +1,69 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { ILoanManagerStructs } from "./interfaces/ILoanManagerStructs.sol";
+import { MockERC20 } from "../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
-import { LoanManagerHarness }                            from "./utils/Harnesses.sol";
-import { TestBase }                                      from "./utils/TestBase.sol";
+import { ILoanManagerStructs } from "./utils/Interfaces.sol";
+
+import { LoanManagerHarness } from "./utils/Harnesses.sol";
 
 import {
     MockFactory,
     MockGlobals,
     MockLoan,
     MockPoolManager,
-    MockReenteringLoan
+    MockReenteringLoan,
+    MockRevertingERC20
 } from "./utils/Mocks.sol";
+
+import { TestBase } from "./utils/TestBase.sol";
 
 contract FundFailureTests is TestBase {
 
+    address poolDelegate = makeAddr("poolDelegate");
+
     LoanManagerHarness loanManager = new LoanManagerHarness();
+    MockERC20          asset       = new MockERC20("Asset", "A", 6);
     MockLoan           loan        = new MockLoan();
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
         poolManager = new MockPoolManager();
 
+        poolManager.__setAsset(address(asset));
+        poolManager.__setPoolDelegate(address(poolDelegate));
+
+        loanManager.__setFundsAsset(address(asset));
         loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
     }
 
     function test_fund_notPoolDelegate() public {
-        vm.expectRevert("LM:F:NOT_PM");
-        loanManager.fund(address(loan));
+        vm.expectRevert("LM:F:NOT_PD");
+        loanManager.fund(address(loan), 1);
+    }
+
+    function test_fund_failedApproval() public {
+        loanManager.__setFundsAsset(address(new MockRevertingERC20()));
+
+        vm.prank(poolDelegate);
+        vm.expectRevert("LM:F:APPROVE_FAILED");
+        loanManager.fund(address(loan), 1);
     }
 
     function test_fund_reentrancy() public {
         address loan_ = address(new MockReenteringLoan());
 
+        vm.prank(poolDelegate);
         vm.expectRevert("LM:LOCKED");
-        vm.prank(address(poolManager));
-        loanManager.fund(address(loan_));
+        loanManager.fund(address(loan_), 1);
     }
 
 }
 
 contract FundTests is TestBase {
+
+    address poolDelegate = makeAddr("poolDelegate");
 
     uint256 start;
 
@@ -53,6 +74,7 @@ contract FundTests is TestBase {
     LoanManagerHarness loanManager = new LoanManagerHarness();
     MockFactory        factory     = new MockFactory();
     MockGlobals        globals     = new MockGlobals(makeAddr("governor"));
+    MockERC20          asset       = new MockERC20("Asset", "A", 6);
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
@@ -61,7 +83,11 @@ contract FundTests is TestBase {
 
         factory.__setGlobals(address(globals));
 
+        poolManager.__setAsset(address(asset));
+        poolManager.__setPoolDelegate(poolDelegate);
+
         loanManager.__setFactory(address(factory));
+        loanManager.__setFundsAsset(address(asset));
         loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
 
@@ -116,8 +142,8 @@ contract FundTests is TestBase {
             loan_.__expectCall();
             loan_.fund();
 
-            vm.prank(address(poolManager));
-            loanManager.fund(address(loan_));
+            vm.prank(poolDelegate);
+            loanManager.fund(address(loan_), principal_);
 
             ILoanManagerStructs.SortedPayment memory sortedPayment = ILoanManagerStructs(address(loanManager)).sortedPayments(i);
 

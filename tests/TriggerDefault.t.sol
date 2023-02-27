@@ -45,14 +45,15 @@ contract TriggerDefaultBase is TestBase {
         loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
 
+        poolManager.__setAsset(address(asset));
         poolManager.__setPoolDelegate(poolDelegate);
 
         loan.__setPrincipal(principal);
         loan.__setPaymentDueDate(block.timestamp + duration);
         loan.__setInterest(expectedInterest);
 
-        vm.prank(address(poolManager));
-        loanManager.fund(address(loan));
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan), principal);
 
         assertGlobalState({
             loanManager:                address(loanManager),
@@ -96,7 +97,7 @@ contract TriggerDefaultBase is TestBase {
 
 contract TriggerDefaultFailureTests is TriggerDefaultBase {
 
-    function test_triggerDefault_notPM() external {
+    function test_triggerDefault_notPoolDelegate() external {
         vm.expectRevert("LM:TD:NOT_PM");
         loanManager.triggerDefault(address(loan));
     }

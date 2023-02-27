@@ -3,7 +3,7 @@ pragma solidity 0.8.7;
 
 import { console2, Test } from "../../modules/forge-std/src/Test.sol";
 
-import { ILoanManagerStructs } from "../interfaces/ILoanManagerStructs.sol";
+import { ILoanManagerStructs } from "./Interfaces.sol";
 
 import { LoanManagerHarness } from "./Harnesses.sol";
 

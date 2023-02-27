@@ -56,7 +56,7 @@ interface IMapleLoanLike {
 
     function defaultDate() external view returns (uint40 paymentDefaultDate_);
 
-    function fund() external returns (uint256 fundsLent_, uint40 paymentDefaultDate_);
+    function fund() external returns (uint256 fundsLent_, uint40 paymentDueDate_, uint40 defaultDate_);
 
     function isImpaired() external view returns (bool isImpaired_);
 
@@ -68,7 +68,7 @@ interface IMapleLoanLike {
 
     function paymentInterval() external view returns (uint32 paymentInterval_);
 
-    function paymentBreakdown() external view returns (uint256 interest_, uint256 lateInterest_);
+    function paymentBreakdown(uint256 paymentTimestamp_) external view returns (uint256 interest_, uint256 lateInterest_);
 
     function principal() external view returns (uint256 principal_);
 
@@ -99,5 +99,7 @@ interface IPoolManagerLike {
     function hasSufficientCover() external view returns (bool hasSufficientCover_);
 
     function poolDelegate() external view returns (address poolDelegate_);
+
+    function requestFunds(address destination_, uint256 principal_) external;
 
 }

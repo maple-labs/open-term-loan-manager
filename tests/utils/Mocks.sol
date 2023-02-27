@@ -112,9 +112,9 @@ contract MockLoan is Spied {
 
     uint256 public paymentInterval;
 
-    uint40 _defaultDate;
     uint40 _dateImpaired;
     uint40 _datePaid;
+    uint40 _defaultDate;
     uint40 _normalPaymentDueDate;
     uint40 _paymentDueDate;
 
@@ -134,8 +134,9 @@ contract MockLoan is Spied {
         defaultDate_ = _defaultDate;
     }
 
-    function fund() external spied returns (uint256 amount_, uint256 date_) {
-        ( amount_, date_ ) = ( _principal, _paymentDueDate );
+
+    function fund() external spied returns (uint256 amount_, uint40 paymentDueDate_, uint40 defaultDate_) {
+        ( amount_, paymentDueDate_, defaultDate_ ) = ( _principal, _paymentDueDate, _defaultDate );
     }
 
     function impair() external spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
@@ -150,7 +151,8 @@ contract MockLoan is Spied {
         paymentDueDate_ = _normalPaymentDueDate;
     }
 
-    function paymentBreakdown() external view returns (uint256 interest_, uint256 lateInterest_) {
+    function paymentBreakdown(uint256 timestamp_) external view returns (uint256 interest_, uint256 lateInterest_) {
+        timestamp_;
         ( interest_, lateInterest_ ) = ( _interest, _lateInterest );
     }
 
@@ -213,7 +215,7 @@ contract MockLoan is Spied {
 contract MockReenteringLoan {
 
      function fund() external returns (uint256 amount_, uint256 date_) {
-        ILoanManager(msg.sender).fund(address(this));
+        ILoanManager(msg.sender).fund(address(this), 0);
     }
 
 }
@@ -243,6 +245,7 @@ contract MockPool {
 
 contract MockPoolManager {
 
+    address public asset;
     address public poolDelegate;
     address public factory;
 
@@ -252,8 +255,14 @@ contract MockPoolManager {
         hasSufficientCover_ = true;
     }
 
+    function requestFunds(address destination_, uint256 principal_) external pure { }
+
     function setDelegateManagementFeeRate(uint256 delegateManagementFeeRate_) external {
         delegateManagementFeeRate = delegateManagementFeeRate_;
+    }
+
+    function __setAsset(address asset_) external {
+        asset = asset_;
     }
 
     function __setFactory(address factory_) external {
@@ -284,3 +293,10 @@ contract MockLiquidatorFactory {
 
 }
 
+contract MockRevertingERC20 {
+
+    function approve(address, uint256) external pure returns (bool) {
+        require(false);
+    }
+
+}

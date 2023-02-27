@@ -13,7 +13,8 @@ contract DistributeClaimedFundsBase is TestBase {
     uint256 constant platformManagementFeeRate = 0.06e6;
     uint256 constant delegateManagementFeeRate = 0.04e6;
 
-    address treasury = makeAddr("treasury");
+    address poolDelegate = makeAddr("poolDelegate");
+    address treasury     = makeAddr("treasury");
 
     uint256 start;
 
@@ -30,6 +31,9 @@ contract DistributeClaimedFundsBase is TestBase {
         factory.__setGlobals(address(globals));
 
         globals.setMapleTreasury(treasury);
+
+        poolManager.__setAsset(address(asset));
+        poolManager.__setPoolDelegate(poolDelegate);
 
         loanManager.__setFactory(address(factory));
         loanManager.__setFundsAsset(address(asset));
@@ -58,8 +62,8 @@ contract DistributeClaimedFundsFailureTests is DistributeClaimedFundsBase {
         loan.__setPaymentDueDate(start + 1_000_000);
         loan.__setInterest(10_000e6);
 
-        vm.prank(address(poolManager));
-        loanManager.fund(address(loan));
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan), 1_000_000e6);
 
     }
 
@@ -98,13 +102,11 @@ contract DistributeClaimedFundsFailureTests is DistributeClaimedFundsBase {
 
 contract DistributeClaimedFundsTests is DistributeClaimedFundsBase {
 
-    address pool         = makeAddr("pool");
-    address poolDelegate = makeAddr("poolDelegate");
+    address pool = makeAddr("pool");
 
     function setUp() public override {
         super.setUp();
 
-        poolManager.__setPoolDelegate(poolDelegate);
         loanManager.__setPool(pool);
 
         // Just for fund, not used in distributeClaimedFunds.
@@ -112,8 +114,8 @@ contract DistributeClaimedFundsTests is DistributeClaimedFundsBase {
         loan.__setPaymentDueDate(start + 1_000_000);
         loan.__setInterest(10_000e6);
 
-        vm.prank(address(poolManager));
-        loanManager.fund(address(loan));
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan), 1_000_000e6);
 
     }
 

@@ -94,20 +94,21 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Loan Funding and Refinancing Functions                                                                                         ***/
     /**************************************************************************************************************************************/
 
-    function fund(address loan_) external override nonReentrant {
-        require(msg.sender == poolManager, "LM:F:NOT_PM");
+    function fund(address loan_, uint256 principal_) external override nonReentrant {
+        require(msg.sender == poolDelegate(), "LM:F:NOT_PD");
 
         _advanceGlobalPaymentAccounting();
 
-        ( uint256 fundsLent_, ) = IMapleLoanLike(loan_).fund();
+        IPoolManagerLike(poolManager).requestFunds(address(this), principal_);
+
+        require(ERC20Helper.approve(fundsAsset, loan_, principal_), "LM:F:APPROVE_FAILED");
+
+        ( uint256 fundsLent_, uint40 paymentDueDate_, ) = IMapleLoanLike(loan_).fund();
 
         emit PrincipalOutUpdated(principalOut += _uint128(fundsLent_));
 
         // Add new issuance rate from queued payment to aggregate issuance rate.
-        _updateIssuanceParams(
-            issuanceRate + _queueNextPayment(loan_, block.timestamp, IMapleLoanLike(loan_).paymentDueDate()),
-            accountedInterest
-        );
+        _updateIssuanceParams(issuanceRate + _queueNextPayment(loan_, block.timestamp, paymentDueDate_), accountedInterest);
     }
 
     /**************************************************************************************************************************************/
@@ -403,7 +404,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
             managementFeeRate_         = HUNDRED_PERCENT;
         }
 
-        ( uint256 interest_, ) = IMapleLoanLike(loan_).paymentBreakdown();
+        ( uint256 interest_, ) = IMapleLoanLike(loan_).paymentBreakdown(nextPaymentDueDate_);
 
         newRate_ = (_getNetInterest(interest_, managementFeeRate_) * PRECISION) / (nextPaymentDueDate_ - startDate_);
 
@@ -524,7 +525,15 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
     }
 
-    function _distributeClaimedFunds(address loan_, uint256 principal_, uint256 interest_, uint256 delegateServiceFee_, uint256 platformServiceFee_) internal {
+    function _distributeClaimedFunds(
+        address loan_,
+        uint256 principal_,
+        uint256 interest_,
+        uint256 delegateServiceFee_,
+        uint256 platformServiceFee_
+    )
+        internal
+    {
         uint256 paymentId_ = paymentIdOf[loan_];
 
         require(paymentId_ != 0, "LM:DCF:NOT_LOAN");
@@ -657,7 +666,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
                     refinanceInterest_:   paymentInfo_.refinanceInterest
                 });
 
-        ( uint256 interest_, uint256 lateInterest_ ) = IMapleLoanLike(loan_).paymentBreakdown();
+        ( uint256 interest_, uint256 lateInterest_ ) = IMapleLoanLike(loan_).paymentBreakdown(block.timestamp);
 
         netLateInterest_ = _getNetInterest(
             lateInterest_,

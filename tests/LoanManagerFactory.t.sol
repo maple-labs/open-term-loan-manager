@@ -43,6 +43,8 @@ contract LoanManagerFactoryBase is Test {
 
         globals.setValidPoolDeployer(address(this), true);
 
+        poolManager.__setAsset(address(asset));
+
         pool.__setAsset(asset);
         pool.__setManager(manager);
     }

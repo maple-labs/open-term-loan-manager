@@ -10,6 +10,8 @@ import { MockGlobals, MockLoan, MockPoolManager, MockFactory } from "./utils/Moc
 
 contract ClaimTestBase is TestBase {
 
+    address poolDelegate = makeAddr("poolDelegate");
+
     LoanManagerHarness loanManager = new LoanManagerHarness();
     MockERC20          asset       = new MockERC20("A", "A", 18);
     MockFactory        factory     = new MockFactory();
@@ -22,6 +24,9 @@ contract ClaimTestBase is TestBase {
         factory.__setGlobals(address(globals));
 
         globals.setMapleTreasury(makeAddr("treasury"));
+
+        poolManager.__setAsset(address(asset));
+        poolManager.__setPoolDelegate(address(poolDelegate));
 
         loanManager.__setFactory(address(factory));
         loanManager.__setFundsAsset(address(asset));
@@ -84,8 +89,8 @@ contract ClaimTests is ClaimTestBase {
         loan.__setPaymentDueDate(start + paymentInterval);
         loan.__setInterest(interest1);
 
-        vm.prank(address(poolManager));
-        loanManager.fund(address(loan));
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan), principal);
 
         uint256 netInterest1 = interest1 * 0.9e6 / 1e6;
 

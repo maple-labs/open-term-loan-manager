@@ -45,6 +45,7 @@ contract RemoveLoanImpairmentBase is TestBase {
         loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
 
+        poolManager.__setAsset(address(asset));
         poolManager.__setPoolDelegate(poolDelegate);
 
         loan.__setPrincipal(principal);
@@ -52,8 +53,8 @@ contract RemoveLoanImpairmentBase is TestBase {
         loan.__setNormalPaymentDueDate(block.timestamp + duration);
         loan.__setInterest(expectedInterest);
 
-        vm.prank(address(poolManager));
-        loanManager.fund(address(loan));
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan), principal);
 
         assertGlobalState({
             loanManager:                address(loanManager),
