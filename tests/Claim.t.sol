@@ -6,7 +6,13 @@ import { MockERC20 } from "../modules/erc20/contracts/test/mocks/MockERC20.sol";
 import { LoanManagerHarness } from "./utils/Harnesses.sol";
 import { TestBase }           from "./utils/TestBase.sol";
 
-import { MockGlobals, MockLoan, MockPoolManager, MockFactory } from "./utils/Mocks.sol";
+import { 
+    MockGlobals, 
+    MockLoan, 
+    MockLoanFactory, 
+    MockPoolManager, 
+    MockFactory } 
+from "./utils/Mocks.sol";
 
 contract ClaimTestBase is TestBase {
 
@@ -16,6 +22,7 @@ contract ClaimTestBase is TestBase {
     MockERC20          asset       = new MockERC20("A", "A", 18);
     MockFactory        factory     = new MockFactory();
     MockGlobals        globals     = new MockGlobals(makeAddr("governor"));
+    MockLoanFactory    loanFactory = new MockLoanFactory();
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
@@ -24,6 +31,8 @@ contract ClaimTestBase is TestBase {
         factory.__setGlobals(address(globals));
 
         globals.setMapleTreasury(makeAddr("treasury"));
+        globals.__setIsBorrower(true);
+        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
 
         poolManager.__setAsset(address(asset));
         poolManager.__setPoolDelegate(address(poolDelegate));
@@ -85,9 +94,12 @@ contract ClaimTests is ClaimTestBase {
         // First, create the loan that will be claimed and set the needed variables.
         MockLoan loan = new MockLoan();
 
+        loan.__setFactory(address(loanFactory));
         loan.__setPrincipal(principal);
         loan.__setPaymentDueDate(start + paymentInterval);
         loan.__setInterest(interest1);
+
+        loanFactory.__setIsLoan(address(loan), true);
 
         vm.prank(poolDelegate);
         loanManager.fund(address(loan), principal);

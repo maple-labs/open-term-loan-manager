@@ -6,7 +6,7 @@ import { MockERC20 } from "../modules/erc20/contracts/test/mocks/MockERC20.sol";
 import { LoanManagerHarness } from "./utils/Harnesses.sol";
 import { TestBase }            from "./utils/TestBase.sol";
 
-import { MockGlobals, MockLoan, MockPoolManager, MockFactory } from "./utils/Mocks.sol";
+import { MockGlobals, MockLoan, MockLoanFactory, MockPoolManager, MockFactory } from "./utils/Mocks.sol";
 
 contract DistributeClaimedFundsBase is TestBase {
 
@@ -23,6 +23,7 @@ contract DistributeClaimedFundsBase is TestBase {
     MockFactory        factory     = new MockFactory();
     MockGlobals        globals     = new MockGlobals(makeAddr("governor"));
     MockLoan           loan        = new MockLoan();
+    MockLoanFactory    loanFactory = new MockLoanFactory();
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
@@ -31,6 +32,8 @@ contract DistributeClaimedFundsBase is TestBase {
         factory.__setGlobals(address(globals));
 
         globals.setMapleTreasury(treasury);
+        globals.__setIsBorrower(true);
+        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
 
         poolManager.__setAsset(address(asset));
         poolManager.__setPoolDelegate(poolDelegate);
@@ -39,6 +42,10 @@ contract DistributeClaimedFundsBase is TestBase {
         loanManager.__setFundsAsset(address(asset));
         loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
+
+        loan.__setFactory(address(loanFactory));
+
+        loanFactory.__setIsLoan(address(loan), true);
 
         // Set Management Fees
         globals.setPlatformManagementFeeRate(address(poolManager), platformManagementFeeRate);

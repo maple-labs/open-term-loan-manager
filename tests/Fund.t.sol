@@ -11,6 +11,7 @@ import {
     MockFactory,
     MockGlobals,
     MockLoan,
+    MockLoanFactory,
     MockPoolManager,
     MockReenteringLoan,
     MockRevertingERC20
@@ -24,22 +25,68 @@ contract FundFailureTests is TestBase {
 
     LoanManagerHarness loanManager = new LoanManagerHarness();
     MockERC20          asset       = new MockERC20("Asset", "A", 6);
+    MockGlobals        globals     = new MockGlobals(makeAddr("governor"));
+    MockFactory        factory     = new MockFactory();
     MockLoan           loan        = new MockLoan();
+    MockLoanFactory    loanFactory = new MockLoanFactory();
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
         poolManager = new MockPoolManager();
 
+        globals.__setIsBorrower(true);
+        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
+
+        factory.__setGlobals(address(globals));
+
         poolManager.__setAsset(address(asset));
         poolManager.__setPoolDelegate(address(poolDelegate));
 
+        loanManager.__setFactory(address(factory));
         loanManager.__setFundsAsset(address(asset));
         loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
+
+        loan.__setFactory(address(loanFactory));
+        loan.__setPrincipal(1);
+
+        loanFactory.__setIsLoan(address(loan), true);
     }
 
     function test_fund_notPoolDelegate() public {
         vm.expectRevert("LM:F:NOT_PD");
+        loanManager.fund(address(loan), 1);
+    }
+
+    function test_fund_invalidFactory() public {
+        globals.__setIsFactory("OT_LOAN", address(loanFactory), false);
+
+        vm.prank(poolDelegate);
+        vm.expectRevert("LM:VL:INVALID_LOAN_FACTORY");
+        loanManager.fund(address(loan), 1);
+    }
+
+    function test_fund_invalidLoan() public {
+        loanFactory.__setIsLoan(address(loan), false);
+
+        vm.prank(poolDelegate);
+        vm.expectRevert("LM:VL:INVALID_LOAN_INSTANCE");
+        loanManager.fund(address(loan), 1);
+    }
+
+    function test_fund_invalidBorrower() public {
+        globals.__setIsBorrower(false);
+
+        vm.prank(poolDelegate);
+        vm.expectRevert("LM:VL:INVALID_BORROWER");
+        loanManager.fund(address(loan), 1);
+    }
+
+    function test_fund_inactiveLoan() public {
+        loan.__setPrincipal(0);
+
+        vm.prank(poolDelegate);
+        vm.expectRevert("LM:VL:LOAN_NOT_ACTIVE");
         loanManager.fund(address(loan), 1);
     }
 
@@ -52,7 +99,11 @@ contract FundFailureTests is TestBase {
     }
 
     function test_fund_reentrancy() public {
-        address loan_ = address(new MockReenteringLoan());
+        MockReenteringLoan loan_ = new MockReenteringLoan();
+        loan_.__setFactory(address(loanFactory));
+        loan_.__setPrincipal(1);
+
+        loanFactory.__setIsLoan(address(loan_), true);
 
         vm.prank(poolDelegate);
         vm.expectRevert("LM:LOCKED");
@@ -75,11 +126,15 @@ contract FundTests is TestBase {
     MockFactory        factory     = new MockFactory();
     MockGlobals        globals     = new MockGlobals(makeAddr("governor"));
     MockERC20          asset       = new MockERC20("Asset", "A", 6);
+    MockLoanFactory    loanFactory = new MockLoanFactory();
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
         start       = block.timestamp;
         poolManager = new MockPoolManager();
+
+        globals.__setIsBorrower(true);
+        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
 
         factory.__setGlobals(address(globals));
 
@@ -135,9 +190,12 @@ contract FundTests is TestBase {
 
             MockLoan loan_ = new MockLoan();
 
+            loan_.__setFactory(address(loanFactory));
             loan_.__setPrincipal(principal_);
             loan_.__setPaymentDueDate(block.timestamp + paymentInterval_);
             loan_.__setInterest(grossInterest_);
+
+            loanFactory.__setIsLoan(address(loan_), true);
 
             loan_.__expectCall();
             loan_.fund();

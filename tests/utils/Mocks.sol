@@ -58,6 +58,7 @@ contract MockFactory {
 
 contract MockGlobals {
 
+    bool internal _isBorrower;
     bool internal _isValidScheduledCall;
 
     address public governor;
@@ -78,6 +79,14 @@ contract MockGlobals {
 
     function isValidScheduledCall(address, address, bytes32, bytes calldata) external view returns (bool isValid_) {
         isValid_ = _isValidScheduledCall;
+    }
+
+    function isBorrower(address) external view returns (bool isBorrower_) {
+        isBorrower_ = _isBorrower;
+    }
+
+    function __setIsBorrower(bool isBorrower_) external {
+        _isBorrower = isBorrower_;
     }
 
     function __setIsFactory(bytes32 factoryType_, address factory_, bool isFactory_) external {
@@ -109,6 +118,9 @@ contract MockGlobals {
 }
 
 contract MockLoan is Spied {
+
+    address public factory;
+    address public borrower;
 
     uint256 public paymentInterval;
 
@@ -186,6 +198,10 @@ contract MockLoan is Spied {
         _defaultDate = uint40(defaultDate_);
     }
 
+    function __setFactory(address factory_) external {
+        factory = factory_;
+    }
+
     function __setInterest(uint256 interest_) external {
         _interest = interest_;
     }
@@ -214,8 +230,37 @@ contract MockLoan is Spied {
 
 contract MockReenteringLoan {
 
-     function fund() external returns (uint256 amount_, uint256 date_) {
+    address public borrower;
+    address public factory;
+
+    uint256 public principal;
+
+     function fund() external returns (uint256 , uint256) {
         ILoanManager(msg.sender).fund(address(this), 0);
+    }
+
+    function __setFactory(address factory_) external {
+        factory = factory_;
+    }
+
+    function __setPrincipal(uint256 principal_) external {
+        principal = principal_;
+    }
+
+}
+
+contract MockLoanFactory {
+
+    address public mapleGlobals;
+    
+    mapping(address => bool) public isLoan;
+
+    function __setGlobals(address globals_) external {
+        mapleGlobals = globals_;
+    }
+
+    function __setIsLoan(address loan_, bool isLoan_) external {
+        isLoan[loan_] = isLoan_;
     }
 
 }

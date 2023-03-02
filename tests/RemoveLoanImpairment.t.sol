@@ -12,6 +12,7 @@ import {
     MockFactory,
     MockGlobals,
     MockLoan,
+    MockLoanFactory,
     MockPool,
     MockPoolManager
 } from "./utils/Mocks.sol";
@@ -33,11 +34,15 @@ contract RemoveLoanImpairmentBase is TestBase {
     MockFactory        factory     = new MockFactory();
     MockGlobals        globals     = new MockGlobals(makeAddr("governor"));
     MockLoan           loan        = new MockLoan();
+    MockLoanFactory    loanFactory = new MockLoanFactory();
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
         start = block.timestamp;
 
+        globals.__setIsBorrower(true);
+        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
+        
         factory.__setGlobals(address(globals));
 
         loanManager.__setFactory(address(factory));
@@ -48,10 +53,13 @@ contract RemoveLoanImpairmentBase is TestBase {
         poolManager.__setAsset(address(asset));
         poolManager.__setPoolDelegate(poolDelegate);
 
+        loan.__setFactory(address(loanFactory));
         loan.__setPrincipal(principal);
         loan.__setPaymentDueDate(block.timestamp + duration);
         loan.__setNormalPaymentDueDate(block.timestamp + duration);
         loan.__setInterest(expectedInterest);
+
+        loanFactory.__setIsLoan(address(loan), true);
 
         vm.prank(poolDelegate);
         loanManager.fund(address(loan), principal);

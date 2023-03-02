@@ -12,6 +12,7 @@ import {
     MockFactory,
     MockGlobals,
     MockLoan,
+    MockLoanFactory,
     MockPool,
     MockPoolManager
 } from "./utils/Mocks.sol";
@@ -30,10 +31,14 @@ contract ImpairLoanBase is TestBase {
     MockFactory        factory     = new MockFactory();
     MockGlobals        globals     = new MockGlobals(governor);
     MockLoan           loan        = new MockLoan();
+    MockLoanFactory    loanFactory = new MockLoanFactory();
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
         start = block.timestamp;
+
+        globals.__setIsBorrower(true);
+        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
 
         factory.__setGlobals(address(globals));
 
@@ -44,6 +49,10 @@ contract ImpairLoanBase is TestBase {
 
         poolManager.__setAsset(address(asset));
         poolManager.__setPoolDelegate(poolDelegate);
+
+        loan.__setFactory(address(loanFactory));
+
+        loanFactory.__setIsLoan(address(loan), true);
     }
 
 }
