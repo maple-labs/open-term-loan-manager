@@ -107,7 +107,7 @@ contract TriggerDefaultFailureTests is TriggerDefaultBase {
 
     function test_triggerDefault_notPoolDelegate() external {
         vm.expectRevert("LM:TD:NOT_PM");
-        loanManager.triggerDefault(address(loan));
+        loanManager.triggerDefault(address(loan), address(0));
     }
 
     function test_triggerDefault_notLoan() external {
@@ -115,7 +115,7 @@ contract TriggerDefaultFailureTests is TriggerDefaultBase {
 
         vm.prank(address(poolManager));
         vm.expectRevert("LM:TD:NOT_LOAN");
-        loanManager.triggerDefault(address(unregisteredLoan));
+        loanManager.triggerDefault(address(unregisteredLoan), address(0));
     }
 
 }
@@ -153,7 +153,7 @@ contract TriggerDefaultSuccessTests is TriggerDefaultBase {
         });
 
         vm.prank(address(poolManager));
-        loanManager.triggerDefault(address(loan));
+        loanManager.triggerDefault(address(loan), address(0));
 
         assertGlobalState({
             loanManager:                address(loanManager),

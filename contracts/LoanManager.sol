@@ -303,7 +303,12 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
     // TODO: Different interface for PM to accommodate vs FT-LM
     // TODO: Refactor internal functions used as we no longer need to liquidate the collateral as in fixed term loans
-    function triggerDefault(address loan_) external override returns (uint256 remainingLosses_, uint256 platformFees_) {
+    function triggerDefault(
+        address loan_,
+        address liquidatorFactory_
+    ) external override returns (bool liquidationComplete_, uint256 remainingLosses_, uint256 platformFees_) {
+        liquidatorFactory_;  // NOTE: Param is unused, but required to match interface on the PoolManager.
+
         require(msg.sender == poolManager, "LM:TD:NOT_PM");
 
         uint256 paymentId_ = paymentIdOf[loan_];
@@ -326,6 +331,8 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
             : _getDefaultInterestAndFees(loan_, paymentInfo_);
 
         ( remainingLosses_, platformFees_ ) = _handleNonLiquidatingRepossession(loan_, platformFees_, netInterest_, netLateInterest_);
+
+        liquidationComplete_ = true;
     }
 
     /**************************************************************************************************************************************/
