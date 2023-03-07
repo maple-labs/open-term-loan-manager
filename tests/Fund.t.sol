@@ -166,7 +166,6 @@ contract FundTests is TestBase {
         });
     }
 
-
     function testFuzz_fund_multipleLoans(uint256 seed) external {
         uint256 lowestInterval      = type(uint256).max;
         uint256 lowestIntervalIndex = 1;

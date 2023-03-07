@@ -83,6 +83,8 @@ interface IMapleLoanLike {
 
     function principal() external view returns (uint256 principal_);
 
+    function proposeNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_) external returns (bytes32 refinanceCommitment_);
+
     function removeCall() external returns (uint40 paymentDueDate_);
 
     function removeImpairment() external returns (uint40 paymentDueDate_);

@@ -174,4 +174,94 @@ contract ClaimTests is ClaimTestBase {
         });
     }
 
+    function test_claim_withPrincipalIncrease() external {
+        // First, create the loan that will be claimed and set the needed variables.
+        MockLoan loan = new MockLoan();
+
+        loan.__setFactory(address(loanFactory));
+        loan.__setPrincipal(2_000_000e6);
+        loan.__setPaymentDueDate(start + paymentInterval);
+        loan.__setInterest(interest1);
+
+        loanFactory.__setIsLoan(address(loan), true);
+
+        vm.prank(address(poolDelegate));
+        loanManager.fund(address(loan), 2_000_000e6);
+
+        uint256 netInterest = interest1 * 0.9e6 / 1e6;
+
+        // The new payment should been added
+        assertGlobalState({
+            loanManager:                address(loanManager), 
+            paymentCounter:             1, 
+            paymentWithEarliestDueDate: 1, 
+            domainStart:                start, 
+            domainEnd:                  start + paymentInterval, 
+            accountedInterest:          0, 
+            accruedInterest:            0,
+            assetsUnderManagement:      uint128(principal),
+            principalOut:               principal, 
+            unrealizedLosses:           0, 
+            issuanceRate:               netInterest * 1e30 / paymentInterval
+        });        
+
+        assertLoanState({
+            loanManager:                 address(loanManager),
+            loan:                        address(loan),
+            paymentId:                   1,
+            previousPaymentId:           0,
+            nextPaymentId:               0,
+            startDate:                   start,
+            paymentInfoPaymentDueDate:   start + paymentInterval,
+            sortedPaymentPaymentDueDate: start + paymentInterval,
+            incomingNetInterest:         netInterest,
+            issuanceRate:                netInterest * 1e30 / paymentInterval
+        });
+
+        // Simulate a refinance with a principal increase
+        uint256 principalIncrease = 500_000e6;
+
+        vm.warp(start + paymentInterval);
+        asset.mint(address(loanManager), 500_000e6 + interest1);  // Mint the partial payment + principal increase
+        loan.__setPaymentDueDate(start + 2 * paymentInterval);
+        loan.__setPrincipal(principal + principalIncrease);
+        loan.__setInterest(interest2);
+
+        // Set PM to expect call
+        poolManager.__expectCall();
+        poolManager.requestFunds(address(loanManager), principalIncrease);
+
+        vm.prank(address(loan));
+        loanManager.claim(-500_000e6, interest1, delegateServiceFee, platformServiceFee, uint40(start + 2 * paymentInterval));
+
+        netInterest = interest2 * 0.9e6 / 1e6;
+
+        assertGlobalState({
+            loanManager:                address(loanManager), 
+            paymentCounter:             2, 
+            paymentWithEarliestDueDate: 2, 
+            domainStart:                uint40(start + paymentInterval), 
+            domainEnd:                  uint40(start + 2 * paymentInterval), 
+            accountedInterest:          0, 
+            accruedInterest:            0,
+            assetsUnderManagement:      principal + principalIncrease,
+            principalOut:               principal + principalIncrease, 
+            unrealizedLosses:           0, 
+            issuanceRate:               netInterest * 1e30 / paymentInterval
+        }); 
+
+        assertLoanState({
+            loanManager:                 address(loanManager),
+            loan:                        address(loan),
+            paymentId:                   2,
+            previousPaymentId:           0,
+            nextPaymentId:               0,
+            startDate:                   start + paymentInterval,
+            paymentInfoPaymentDueDate:   start + (paymentInterval * 2),
+            sortedPaymentPaymentDueDate: start + (paymentInterval * 2),
+            incomingNetInterest:         netInterest,
+            issuanceRate:                netInterest * 1e30 / paymentInterval
+        });        
+    }
+
 }

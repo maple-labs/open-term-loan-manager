@@ -114,16 +114,22 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         _updateIssuanceParams(issuanceRate + _queueNextPayment(loan_, block.timestamp, paymentDueDate_), accountedInterest);
     }
 
+    function proposeNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_) external {
+        require(msg.sender == poolDelegate(), "LM:PNT:NOT_PD");
+
+        IMapleLoanLike(loan_).proposeNewTerms(refinancer_, deadline_, calls_);
+    }
+
     /**************************************************************************************************************************************/
     /*** Loan Payment Claim Function                                                                                                    ***/
     /**************************************************************************************************************************************/
 
     function claim(
-        uint256 principal_,
+        int256  principal_,
         uint256 interest_,
         uint256 delegateServiceFee_,
         uint256 platformServiceFee_,
-        uint40 nextPaymentDueDate_)
+        uint40  nextPaymentDueDate_)
         external override nonReentrant
     {
         uint24 paymentId_              = paymentIdOf[msg.sender];
@@ -137,11 +143,11 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         _advanceGlobalPaymentAccounting();
 
         // 2. Transfer the funds from the loan to the `pool`, `poolDelegate`, and `mapleTreasury`.
-        _distributeClaimedFunds(msg.sender, principal_, interest_, delegateServiceFee_, platformServiceFee_);
+        _distributeClaimedFunds(msg.sender, principal_ > 0 ? uint256(principal_) : 0, interest_, delegateServiceFee_, platformServiceFee_);
 
         // 3. If principal has been paid back, decrement `principalOut`.
         if (principal_ != 0) {
-            emit PrincipalOutUpdated(principalOut -= _uint128(principal_));
+            emit PrincipalOutUpdated(principalOut = _uint128(_int128(principalOut) - _int128(principal_)));
         }
 
         // 4. Update the accounting based on the payment that was just made.
@@ -167,6 +173,16 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         //    - Update the `paymentIdOf` mapping.
         //    - Update the `payments` mapping with all of the relevant new payment info.
         uint256 newRate_ = _queueNextPayment(msg.sender, nextStartDate_, nextPaymentDueDate_);
+
+        // If the loan's principal has increased, request PM to send funds here so loan can redistribute.
+        if (principal_ < 0) {
+            uint256 principalIncrease_ = _uint256(-principal_);
+
+            IPoolManagerLike(poolManager).requestFunds(address(this), principalIncrease_);
+
+            // Approve the loan to use this funds
+            require(ERC20Helper.approve(fundsAsset, address(msg.sender), principalIncrease_), "LM:C:APPROVE_FAILED");
+        }
 
         // 8a. If the payment is early, the `accountedInterest` is already fully up to date.
         //      In this case, the `issuanceRate` is the only variable that needs to be updated.
@@ -836,6 +852,16 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Internal Pure Utility Functions                                                                                                ***/
     /**************************************************************************************************************************************/
 
+     function _int128(uint128 input_) internal pure returns (int128 output_) {
+        require(input_ <= uint128(type(int128).max), "LM:INT128_CAST");
+        output_ = int128(input_);
+    }
+
+    function _int128(int256 input_) internal pure returns (int128 output_) {
+        require(input_ <= type(int128).max, "LM:INT128_CAST");
+        output_ = int128(input_);
+    }
+
     function _min(uint256 a_, uint256 b_) internal pure returns (uint256 minimum_) {
         minimum_ = a_ < b_ ? a_ : b_;
     }
@@ -865,9 +891,20 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         output_ = uint120(input_);
     }
 
+    function _uint128(int128 input_) internal pure returns (uint128 output_) {
+        require(input_ > 0, "LM:INT128_CAST");
+        output_ = uint128(input_);
+    }
+
     function _uint128(uint256 input_) internal pure returns (uint128 output_) {
         require(input_ <= type(uint128).max, "LM:UINT128_CAST");
         output_ = uint128(input_);
+    }
+
+
+    function _uint256(int256 input_) internal pure returns (uint256 output_) {
+        require(input_ > 0, "LM:INT256_CAST");
+        output_ = uint256(input_);
     }
 
 }

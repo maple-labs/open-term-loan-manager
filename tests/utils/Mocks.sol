@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { Test } from "../../modules/forge-std/src/Test.sol";
-
 import { MockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 import { Test }      from "../../modules/forge-std/src/Test.sol";
 
@@ -146,7 +144,6 @@ contract MockLoan is Spied {
         defaultDate_ = _defaultDate;
     }
 
-
     function fund() external spied returns (uint256 amount_, uint40 paymentDueDate_, uint40 defaultDate_) {
         ( amount_, paymentDueDate_, defaultDate_ ) = ( _principal, _paymentDueDate, _defaultDate );
     }
@@ -176,7 +173,16 @@ contract MockLoan is Spied {
         principal_ = _principal;
     }
 
-    function removeCall() external view returns (uint40 paymentDueDate_) {
+    function proposeNewTerms(
+        address refinancer_,
+        uint256 deadline_,
+        bytes[] calldata calls_) 
+        external pure returns (bytes32 refinanceCommitment_) 
+    {
+        refinanceCommitment_ =  keccak256(abi.encode(refinancer_, deadline_, calls_));
+    }
+
+    function removeCall() external spied returns (uint40 paymentDueDate_) {
         paymentDueDate_ = _paymentDueDate;
     }
 
@@ -288,7 +294,7 @@ contract MockPool {
 
 }
 
-contract MockPoolManager {
+contract MockPoolManager is Spied {
 
     address public asset;
     address public poolDelegate;
