@@ -160,9 +160,12 @@ contract MockLoan is Spied {
         paymentDueDate_ = _normalPaymentDueDate;
     }
 
-    function paymentBreakdown(uint256 timestamp_) external view returns (uint256 interest_, uint256 lateInterest_) {
+    function paymentBreakdown(uint256 timestamp_) 
+        external view returns (uint256 principal_ , uint256 interest_, uint256 lateInterest_, uint256 delegateFee_, uint256 platformFee_) 
+    {
         timestamp_;
-        ( interest_, lateInterest_ ) = ( _interest, _lateInterest );
+        
+        ( principal_, interest_, lateInterest_, delegateFee_, platformFee_ ) = ( 0, _interest, _lateInterest, 0, 0 );
     }
 
     function paymentDueDate() external view returns (uint40 paymentDueDate_) {

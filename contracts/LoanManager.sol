@@ -430,7 +430,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
             managementFeeRate_         = HUNDRED_PERCENT;
         }
 
-        ( uint256 interest_, ) = IMapleLoanLike(loan_).paymentBreakdown(nextPaymentDueDate_);
+        ( , uint256 interest_, , , ) = IMapleLoanLike(loan_).paymentBreakdown(nextPaymentDueDate_);
 
         newRate_ = (_getNetInterest(interest_, managementFeeRate_) * PRECISION) / (nextPaymentDueDate_ - startDate_);
 
@@ -702,7 +702,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
                     refinanceInterest_:   paymentInfo_.refinanceInterest
                 });
 
-        ( uint256 interest_, uint256 lateInterest_ ) = IMapleLoanLike(loan_).paymentBreakdown(block.timestamp);
+        ( , uint256 interest_, uint256 lateInterest_, , ) = IMapleLoanLike(loan_).paymentBreakdown(block.timestamp);
 
         netLateInterest_ = _getNetInterest(
             lateInterest_,
