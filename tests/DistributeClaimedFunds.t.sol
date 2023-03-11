@@ -8,124 +8,111 @@ import { TestBase }            from "./utils/TestBase.sol";
 
 import { MockGlobals, MockLoan, MockLoanFactory, MockPoolManager, MockFactory } from "./utils/Mocks.sol";
 
+// TODO: Similar tests needed for `_distributeLiquidationFunds`.
+
 contract DistributeClaimedFundsBase is TestBase {
 
-    uint256 constant platformManagementFeeRate = 0.06e6;
-    uint256 constant delegateManagementFeeRate = 0.04e6;
-
+    address pool         = makeAddr("pool");
     address poolDelegate = makeAddr("poolDelegate");
     address treasury     = makeAddr("treasury");
-
-    uint256 start;
 
     LoanManagerHarness loanManager = new LoanManagerHarness();
     MockERC20          asset       = new MockERC20("A", "A", 18);
     MockFactory        factory     = new MockFactory();
-    MockGlobals        globals     = new MockGlobals(makeAddr("governor"));
+    MockGlobals        globals     = new MockGlobals();
     MockLoan           loan        = new MockLoan();
     MockLoanFactory    loanFactory = new MockLoanFactory();
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
-        poolManager = new MockPoolManager();
-
         factory.__setGlobals(address(globals));
 
-        globals.setMapleTreasury(treasury);
-        globals.__setIsBorrower(true);
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
-
         poolManager.__setAsset(address(asset));
-        poolManager.__setPoolDelegate(poolDelegate);
 
         loanManager.__setFactory(address(factory));
         loanManager.__setFundsAsset(address(asset));
-        loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
-
-        loan.__setFactory(address(loanFactory));
-
-        loanFactory.__setIsLoan(address(loan), true);
-
-        // Set Management Fees
-        globals.setPlatformManagementFeeRate(address(poolManager), platformManagementFeeRate);
-        poolManager.setDelegateManagementFeeRate(delegateManagementFeeRate);
-
-        start = block.timestamp;
     }
 
 }
 
 contract DistributeClaimedFundsFailureTests is DistributeClaimedFundsBase {
 
-    uint256 constant interest    = 1_000e6;
-    uint256 constant platformFee = 200e6;
-    uint256 constant delegateFee = 100e6;
-
-    function setUp() public override {
-        super.setUp();
-
-        loan.__setPrincipal(1_000_000e6);
-        loan.__setPaymentDueDate(start + 1_000_000);
-        loan.__setInterest(10_000e6);
-
-        vm.prank(poolDelegate);
-        loanManager.fund(address(loan), 1_000_000e6);
-
-    }
-
-    function test_distributeClaimFunds_notLoan() public {
-        vm.expectRevert("LM:DCF:NOT_LOAN");
-        loanManager.__distributeClaimedFunds(address(1), 0, interest, delegateFee, platformFee);
-    }
-
-    function test_distributeClaimFunds_zeroTreasury() public {
-        globals.setMapleTreasury(address(0));
-
-        vm.expectRevert("LM:DCF:ZERO_ADDRESS");
-        loanManager.__distributeClaimedFunds(address(loan), 0, interest, delegateFee, platformFee);
+    function test_distributeClaimFunds_zeroPool() public {
+        vm.expectRevert("LM:DCF:ZERO_ADDRESS_POOL");
+        loanManager.__distributeClaimedFunds(address(loan), 0, 0, 0, 0);
     }
 
     function test_distributeClaimFunds_poolTransfer() public {
-        vm.expectRevert("LM:DCF:POOL_TRANSFER");
-        loanManager.__distributeClaimedFunds(address(loan), 0, interest, delegateFee, platformFee);
+        poolManager.__setPool(pool);
+
+        vm.expectRevert("LM:DCF:TRANSFER_POOL");
+        loanManager.__distributeClaimedFunds(address(loan), 0, 1, 0, 0);
+    }
+
+    function test_distributeClaimFunds_zeroPoolDelegate() public {
+        poolManager.__setPool(pool);
+
+        vm.expectRevert("LM:DCF:ZERO_ADDRESS_PD");
+        loanManager.__distributeClaimedFunds(address(loan), 0, 0, 0, 0);
+    }
+
+    function test_distributeClaimFunds_zeroDelegate() public {
+        poolManager.__setPool(pool);
+        poolManager.__setPoolDelegate(poolDelegate);
+
+        vm.expectRevert("LM:DCF:TRANSFER_PD");
+        loanManager.__distributeClaimedFunds(address(loan), 0, 0, 1, 0);
+    }
+
+    function test_distributeClaimFunds_zeroTreasury() public {
+        poolManager.__setPool(pool);
+        poolManager.__setPoolDelegate(poolDelegate);
+
+        vm.expectRevert("LM:DCF:ZERO_ADDRESS_MT");
+        loanManager.__distributeClaimedFunds(address(loan), 0, 0, 0, 0);
     }
 
     function test_distributeClaimFunds_platformTransfer() public {
-        asset.mint(address(loanManager), interest);
+        poolManager.__setPool(pool);
+        poolManager.__setPoolDelegate(poolDelegate);
+        globals.setMapleTreasury(treasury);
 
-        vm.expectRevert("LM:DCF:MT_TRANSFER");
-        loanManager.__distributeClaimedFunds(address(loan), 0, interest, delegateFee, platformFee);
-    }
-
-    function test_distributeClaimFunds_delegateTransfer() public {
-        asset.mint(address(loanManager), interest + platformFee);
-
-        vm.expectRevert("LM:DCF:PD_TRANSFER");
-        loanManager.__distributeClaimedFunds(address(loan), 0, interest, delegateFee, platformFee);
+        vm.expectRevert("LM:DCF:TRANSFER_MT");
+        loanManager.__distributeClaimedFunds(address(loan), 0, 0, 0, 1);
     }
 
 }
 
 contract DistributeClaimedFundsTests is DistributeClaimedFundsBase {
 
-    address pool = makeAddr("pool");
+    uint256 constant platformManagementFeeRate = 0.06e6;
+    uint256 constant delegateManagementFeeRate = 0.04e6;
+
+    uint256 start = block.timestamp;
 
     function setUp() public override {
         super.setUp();
 
-        loanManager.__setPool(pool);
+        globals.setMapleTreasury(treasury);
 
-        // Just for fund, not used in distributeClaimedFunds.
-        loan.__setPrincipal(1_000_000e6);
-        loan.__setPaymentDueDate(start + 1_000_000);
-        loan.__setInterest(10_000e6);
+        poolManager.__setPool(pool);
+        poolManager.__setPoolDelegate(poolDelegate);
 
-        vm.prank(poolDelegate);
-        loanManager.fund(address(loan), 1_000_000e6);
+        // Set Management Fees
+        globals.setPlatformManagementFeeRate(address(poolManager), platformManagementFeeRate);
+        poolManager.setDelegateManagementFeeRate(delegateManagementFeeRate);
 
+        loanManager.__setPaymentFor({
+            loan_:                      address(loan),
+            platformManagementFeeRate_: platformManagementFeeRate,
+            delegateManagementFeeRate_: delegateManagementFeeRate,
+            startDate_:                 0,                          // Not needed by `_distributeClaimedFunds`.
+            issuanceRate_:              0                           // Not needed by `_distributeClaimedFunds`.
+        });
     }
 
+    // TODO: Handle negative `principal`.
     function testFuzz_distributeClaimFunds(uint256 principal, uint256 interest, uint256 delegateFee, uint256 platformFee) external {
         principal   = bound(principal,   1_000e6, 1e30);
         interest    = bound(interest,    1000e6,  1e30);
@@ -135,14 +122,13 @@ contract DistributeClaimedFundsTests is DistributeClaimedFundsBase {
         asset.mint(address(loanManager), principal + interest + platformFee + delegateFee);
 
         vm.prank(address(loanManager));
-        loanManager.__distributeClaimedFunds(address(loan), principal, interest, delegateFee, platformFee);
+        loanManager.__distributeClaimedFunds(address(loan), int256(principal), interest, delegateFee, platformFee);
 
         uint256 netInterest           = interest * (1e6 - (platformManagementFeeRate + delegateManagementFeeRate)) / 1e6;
         uint256 platformManagementFee = interest * platformManagementFeeRate / 1e6;
         uint256 delegateManagementFee = interest * delegateManagementFeeRate / 1e6;
 
-        assertTrue(asset.balanceOf(pool) >= principal + netInterest);         // Pool benefits from rounding errors
-        assertApproxEqAbs(asset.balanceOf(pool), principal + netInterest, 2); // Pool benefits from rounding errors
+        assertApproxEqAbs(asset.balanceOf(pool), principal + netInterest, 2);  // Pool benefits from rounding errors
 
         assertEq(asset.balanceOf(poolDelegate),         delegateFee + delegateManagementFee);
         assertEq(asset.balanceOf(treasury),             platformFee + platformManagementFee);

@@ -6,7 +6,7 @@ import { Test }      from "../../modules/forge-std/src/Test.sol";
 
 import { ILoanManager } from "../../contracts/interfaces/ILoanManager.sol";
 
-import { LoanManagerStorage }  from "../../contracts/LoanManagerStorage.sol";
+import { LoanManagerStorage } from "../../contracts/LoanManagerStorage.sol";
 
 // TODO: Eventually propose this to `forge-std`.
 contract Spied is Test {
@@ -71,7 +71,7 @@ contract MockGlobals {
 
     mapping(bytes32 => mapping(address => bool)) public isFactory;
 
-    constructor(address governor_) {
+    function __setGovernor(address governor_) external {
         governor = governor_;
     }
 
@@ -111,7 +111,7 @@ contract MockGlobals {
         isPoolDeployer[poolDeployer_] = isValid_;
     }
 
-    function unscheduleCall(address, bytes32, bytes calldata) external {}
+    function unscheduleCall(address, bytes32, bytes calldata) external pure {}
 
 }
 
@@ -120,136 +120,115 @@ contract MockLoan is Spied {
     address public factory;
     address public borrower;
 
+    uint40 public dateImpaired;
+    uint40 public datePaid;
+    uint40 public dateFunded;
+    uint40 public defaultDate;
+    uint40 public paymentDueDate;
+
     uint256 public paymentInterval;
+    uint256 public principal;
 
-    uint40 _dateImpaired;
-    uint40 _datePaid;
-    uint40 _defaultDate;
-    uint40 _normalPaymentDueDate;
-    uint40 _paymentDueDate;
+    uint256 _fundsLent;
 
-    uint256 _principal;
-    uint256 _interest;
-    uint256 _lateInterest;
+    mapping(uint256 => uint256) _interest;
+    mapping(uint256 => uint256) _lateInterest;
 
-    function call(uint256) external spied returns (uint40 paymentDueDate_) {
-        paymentDueDate_ = _paymentDueDate;
+    function callPrincipal(uint256) external virtual spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
+        ( paymentDueDate_, defaultDate_ ) = ( paymentDueDate, defaultDate );
     }
 
-    function datePaid() external view returns (uint40 datePaid_) {
-        datePaid_ = _datePaid;
+    function fund() public virtual spied returns (uint256 fundsLent_, uint40 paymentDueDate_, uint40 defaultDate_) {
+        ( fundsLent_, paymentDueDate_, defaultDate_ ) = ( _fundsLent, paymentDueDate, defaultDate );
     }
 
-    function defaultDate() external view returns (uint40 defaultDate_) {
-        defaultDate_ = _defaultDate;
-    }
-
-    function fund() external spied returns (uint256 amount_, uint40 paymentDueDate_, uint40 defaultDate_) {
-        ( amount_, paymentDueDate_, defaultDate_ ) = ( _principal, _paymentDueDate, _defaultDate );
-    }
-
-    function impair() external spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
-        ( paymentDueDate_, defaultDate_ ) = ( _paymentDueDate, _defaultDate );
+    function impair() external virtual spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
+        ( paymentDueDate_, defaultDate_ ) = ( paymentDueDate, defaultDate );
     }
 
     function isImpaired() external view returns (bool isImpaired_) {
-        isImpaired_ = _dateImpaired != 0;
+        isImpaired_ = dateImpaired != 0;
     }
 
-    function normalPaymentDueDate() external view returns (uint40 paymentDueDate_) {
-        paymentDueDate_ = _normalPaymentDueDate;
-    }
-
-    function paymentBreakdown(uint256 timestamp_) 
-        external view returns (uint256 principal_ , uint256 interest_, uint256 lateInterest_, uint256 delegateFee_, uint256 platformFee_) 
+    function paymentBreakdown(uint256 timestamp_)
+        external view
+        returns (
+            uint256 calledPrincipal_,
+            uint256 interest_,
+            uint256 lateInterest_,
+            uint256 delegateServiceFee_,
+            uint256 platformServiceFee_
+        )
     {
         timestamp_;
-        
-        ( principal_, interest_, lateInterest_, delegateFee_, platformFee_ ) = ( 0, _interest, _lateInterest, 0, 0 );
+
+        (
+            calledPrincipal_,
+            interest_,
+            lateInterest_,
+            delegateServiceFee_,
+            platformServiceFee_
+        ) = ( 0, _interest[timestamp_], _lateInterest[timestamp_], 0, 0 );
     }
 
-    function paymentDueDate() external view returns (uint40 paymentDueDate_) {
-        paymentDueDate_ = _paymentDueDate;
-    }
-
-    function principal() external view returns (uint256 principal_) {
-        principal_ = _principal;
-    }
-
-    function proposeNewTerms(
-        address refinancer_,
-        uint256 deadline_,
-        bytes[] calldata calls_) 
-        external pure returns (bytes32 refinanceCommitment_) 
+    function proposeNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_)
+        external virtual spied returns (bytes32 refinanceCommitment_)
     {
         refinanceCommitment_ =  keccak256(abi.encode(refinancer_, deadline_, calls_));
     }
 
-    function removeCall() external spied returns (uint40 paymentDueDate_) {
-        paymentDueDate_ = _paymentDueDate;
+    function removeCall() external virtual spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
+        ( paymentDueDate_, defaultDate_) = ( paymentDueDate, defaultDate );
     }
 
-    function repossess(address destination_) external returns (uint256 fundsRepossessed_) {}
+    function repossess(address destination_) external virtual spied returns (uint256 fundsRepossessed_) {}
 
-    function removeImpairment() external spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
-        ( paymentDueDate_, defaultDate_ ) = ( _paymentDueDate, _defaultDate );
+    function removeImpairment() external virtual spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
+        ( paymentDueDate_, defaultDate_ ) = ( paymentDueDate, defaultDate );
     }
 
-    function __setDateImpaired() external {
-        _dateImpaired = uint40(block.timestamp);
+    function __setBorrower(address borrower_) external {
+        borrower = borrower_;
+    }
+
+    function __setDateFunded(uint256 dateFunded_) external {
+        dateFunded = uint40(dateFunded_);
+    }
+
+    function __setDateImpaired(uint256 dateImpaired_) external {
+        dateImpaired = uint40(dateImpaired_);
     }
 
     function __setDatePaid(uint256 datePaid_) external {
-        _datePaid = uint40(datePaid_);
+        datePaid = uint40(datePaid_);
     }
 
     function __setDefaultDate(uint256 defaultDate_) external {
-        _defaultDate = uint40(defaultDate_);
+        defaultDate = uint40(defaultDate_);
     }
 
     function __setFactory(address factory_) external {
         factory = factory_;
     }
 
-    function __setInterest(uint256 interest_) external {
-        _interest = interest_;
+    function __setFundsLent(uint256 fundsLent_) external {
+        _fundsLent = fundsLent_;
     }
 
-    function __setLateInterest(uint256 lateInterest_) external {
-        _lateInterest = lateInterest_;
+    function __setInterest(uint256 timestamp_, uint256 interest_) external {
+        _interest[timestamp_] = interest_;
     }
 
-    function __setNormalPaymentDueDate(uint256 normalPaymentDueDate_) external {
-        _normalPaymentDueDate = uint40(normalPaymentDueDate_);
+    function __setLateInterest(uint256 timestamp_, uint256 lateInterest_) external {
+        _lateInterest[timestamp_] = lateInterest_;
     }
 
     function __setPaymentDueDate(uint256 paymentDueDate_) external {
-        _paymentDueDate = uint40(paymentDueDate_);
+        paymentDueDate = uint40(paymentDueDate_);
     }
 
     function __setPaymentInterval(uint256 paymentInterval_) external {
         paymentInterval = paymentInterval_;
-    }
-
-    function __setPrincipal(uint256 principal_) external {
-        _principal = principal_;
-    }
-
-}
-
-contract MockReenteringLoan {
-
-    address public borrower;
-    address public factory;
-
-    uint256 public principal;
-
-     function fund() external returns (uint256 , uint256) {
-        ILoanManager(msg.sender).fund(address(this), 0);
-    }
-
-    function __setFactory(address factory_) external {
-        factory = factory_;
     }
 
     function __setPrincipal(uint256 principal_) external {
@@ -258,10 +237,19 @@ contract MockReenteringLoan {
 
 }
 
+contract MockReenteringLoan is MockLoan {
+
+    function fund() public override returns (uint256 fundsLent_, uint40 paymentDueDate_, uint40 defaultDate_) {
+        ILoanManager(msg.sender).fund(address(this));
+        ( fundsLent_, paymentDueDate_, defaultDate_ ) = super.fund();
+    }
+
+}
+
 contract MockLoanFactory {
 
     address public mapleGlobals;
-    
+
     mapping(address => bool) public isLoan;
 
     function __setGlobals(address globals_) external {
@@ -270,14 +258,6 @@ contract MockLoanFactory {
 
     function __setIsLoan(address loan_, bool isLoan_) external {
         isLoan[loan_] = isLoan_;
-    }
-
-}
-
-contract MockLoanManagerMigrator is LoanManagerStorage {
-
-    fallback() external {
-        fundsAsset = abi.decode(msg.data, (address));
     }
 
 }
@@ -300,8 +280,9 @@ contract MockPool {
 contract MockPoolManager is Spied {
 
     address public asset;
-    address public poolDelegate;
     address public factory;
+    address public pool;
+    address public poolDelegate;
 
     uint256 public delegateManagementFeeRate;
 
@@ -309,7 +290,7 @@ contract MockPoolManager is Spied {
         hasSufficientCover_ = true;
     }
 
-    function requestFunds(address destination_, uint256 principal_) external pure { }
+    function requestFunds(address destination_, uint256 principal_) external pure {}
 
     function setDelegateManagementFeeRate(uint256 delegateManagementFeeRate_) external {
         delegateManagementFeeRate = delegateManagementFeeRate_;
@@ -323,33 +304,20 @@ contract MockPoolManager is Spied {
         factory = factory_;
     }
 
+    function __setPool(address pool_) external {
+        pool = pool_;
+    }
+
     function __setPoolDelegate(address poolDelegate_) external {
         poolDelegate = poolDelegate_;
     }
 
 }
 
-contract MockLiquidator {
-
-    uint256 public collateralRemaining;
-
-    fallback() external {
-        // Do nothing.
-    }
-
-}
-
-contract MockLiquidatorFactory {
-
-    function createInstance(bytes calldata, bytes32) external returns (address instance_) {
-        instance_ = address(new MockLiquidator());
-    }
-
-}
-
 contract MockRevertingERC20 {
 
-    function approve(address, uint256) external pure returns (bool) {
+    function approve(address, uint256) external pure returns (bool success_) {
+        success_ = false;
         require(false);
     }
 

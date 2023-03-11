@@ -11,6 +11,15 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
     /*** Events                                                                                                                         ***/
     /**************************************************************************************************************************************/
 
+    // TODO: Make one FundsDistributed event with all fees and principal and interest.
+
+    /**
+     *  @dev   Emitted when the accounting state of the loan manager is updated.
+     *  @param issuanceRate_      New value for the issuance rate.
+     *  @param accountedInterest_ The amount of accounted interest.
+     */
+    event AccountingStateUpdated(uint256 issuanceRate_, uint112 accountedInterest_);
+
     /**
      *  @dev   Funds have been claimed and distributed into the Pool.
      *  @param loan_        The address of the loan contract.
@@ -18,14 +27,6 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
      *  @param netInterest_ The amount of net interest paid.
      */
     event FundsDistributed(address indexed loan_, uint256 principal_, uint256 netInterest_);
-
-    /**
-     *  @dev   Emitted when the issuance parameters are changed.
-     *  @param domainEnd_         The timestamp of the domain end.
-     *  @param issuanceRate_      New value for the issuance rate.
-     *  @param accountedInterest_ The amount of accounted interest.
-     */
-    event IssuanceParamsUpdated(uint48 domainEnd_, uint256 issuanceRate_, uint112 accountedInterest_);
 
     /**
      *  @dev   A fee payment was made.
@@ -37,26 +38,21 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
 
     /**
      *  @dev   Emitted when a payment is removed from the LoanManager payments array.
-     *  @param loan_      The address of the loan.
-     *  @param paymentId_ The payment ID of the payment that was removed.
+     *  @param loan_ The address of the loan.
      */
     event PaymentAdded(
         address indexed loan_,
-        uint256 indexed paymentId_,
         uint256 platformManagementFeeRate_,
         uint256 delegateManagementFeeRate_,
-        uint256 startDate_,
-        uint256 nextPaymentDueDate_,
-        uint256 netRefinanceInterest_,
-        uint256 newRate_
+        uint256 paymentDueDate_,
+        uint256 issuanceRate_
     );
 
     /**
      *  @dev   Emitted when a payment is removed from the LoanManager payments array.
-     *  @param loan_      The address of the loan.
-     *  @param paymentId_ The payment ID of the payment that was removed.
+     *  @param loan_ The address of the loan.
      */
-    event PaymentRemoved(address indexed loan_, uint256 indexed paymentId_);
+    event PaymentRemoved(address indexed loan_);
 
     /**
      *  @dev   Emitted when principal out is updated
@@ -68,11 +64,18 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
      *  @dev   Emitted when unrealized losses is updated.
      *  @param unrealizedLosses_ The new value for unrealized losses.
      */
-    event UnrealizedLossesUpdated(uint256 unrealizedLosses_);
+    event UnrealizedLossesUpdated(uint128 unrealizedLosses_);
 
     /**************************************************************************************************************************************/
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
+
+    /**
+     *  @dev   Calls a loan.
+     *  @param loan_      Loan to be called.
+     *  @param principal_ Amount of principal to call the Loan with.
+     */
+    function callPrincipal(address loan_, uint256 principal_) external;
 
     /**
      *  @dev   Called by loans when payments are made, updating the accounting.
@@ -93,10 +96,9 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
 
     /**
      *  @dev   Funds a new loan.
-     *  @param loan_      Loan to be funded.
-     *  @param principal_ Amount of principal to fund the Loan with.
+     *  @param loan_ Loan to be funded.
      */
-    function fund(address loan_, uint256 principal_) external;
+    function fund(address loan_) external;
 
     /**
      *  @dev   Triggers the loan impairment for a loan.
@@ -105,13 +107,28 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
     function impairLoan(address loan_) external;
 
     /**
+     *  @dev   Triggers the loan impairment for a loan.
+     *  @param loan_       The loan to propose new changes to.
+     *  @param refinancer_ The refinancer to use in the refinance.
+     *  @param deadline_   The deadline by which the borrower must accept the new terms.
+     *  @param calls_      The array of calls to be made to the refinancer.
+     */
+    function proposeNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_) external;
+
+    /**
+     *  @dev   Removes a loan call.
+     *  @param loan_ Loan to remove call for.
+     */
+    function removeCall(address loan_) external;
+
+    /**
      *  @dev   Removes the loan impairment for a loan.
      *  @param loan_ Loan to remove the loan impairment.
      */
     function removeLoanImpairment(address loan_) external;
 
     /**
-     *  @dev    Triggers the default of a loan.
+     *  @dev    Triggers the default of a loan. Different interface for PM to accommodate vs FT-LM.
      *  @param  loan_                Loan to trigger the default.
      *  @param  liquidatorFactory_   Address of the liquidator factory (ignored for open-term loans).
      *  @return liquidationComplete_ If the liquidation is complete (always true for open-term loans)
@@ -124,10 +141,12 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
     ) external returns (bool liquidationComplete_, uint256 remainingLosses_, uint256 platformFees_);
 
     /**
-     *  @dev Updates the issuance parameters of the LoanManager, callable by the Governor and the PoolDelegate.
-     *       Useful to call when `block.timestamp` is greater than `domainEnd` and the LoanManager is not accruing interest.
+     *  @dev    Triggers the default of a loan.
+     *  @param  loan_            Loan to trigger the default.
+     *  @return remainingLosses_ The amount of remaining losses.
+     *  @return platformFees_    The amount of platform fees.
      */
-    function updateAccounting() external;
+    function triggerDefault(address loan_) external returns (uint256 remainingLosses_, uint256 platformFees_);
 
     /**************************************************************************************************************************************/
     /*** View Functions                                                                                                                 ***/
@@ -146,16 +165,16 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
     function HUNDRED_PERCENT() external returns (uint256 hundredPercent_);
 
     /**
+     *  @dev    Gets the amount of accrued interest up until this point in time.
+     *  @return accruedInterest_ The amount of accrued interest up until this point in time.
+     */
+    function accruedInterest() external view returns (uint256 accruedInterest_);
+
+    /**
      *  @dev    Gets the amount of assets under the management of the contract.
      *  @return assetsUnderManagement_ The amount of assets under the management of the contract.
      */
     function assetsUnderManagement() external view returns (uint256 assetsUnderManagement_);
-
-    /**
-     *  @dev    Gets the amount of accrued interest up until this point in time.
-     *  @return accruedInterest_ The amount of accrued interest up until this point in time.
-     */
-    function getAccruedInterest() external view returns (uint256 accruedInterest_);
 
     /**
      *  @dev    Gets the address of the Maple globals contract.
@@ -168,6 +187,12 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
      *  @return governor_ The address of the governor contract.
      */
     function governor() external view returns (address governor_);
+
+    /**
+     *  @dev    Gets the address of the pool.
+     *  @return pool_ The address of the pool.
+     */
+    function pool() external view returns (address pool_);
 
     /**
      *  @dev    Gets the address of the pool delegate.

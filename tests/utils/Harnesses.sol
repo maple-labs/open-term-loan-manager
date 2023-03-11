@@ -1,22 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { LoanManager }            from "../../contracts/LoanManager.sol";
-import { LoanManagerInitializer } from "../../contracts/LoanManagerInitializer.sol";
+import { LoanManager } from "../../contracts/LoanManager.sol";
 
-contract LoanManagerHarness is LoanManager, LoanManagerInitializer {
-
-    function __initialize(address pool_) external {
-        _initialize(pool_);
-    }
-
-    function __advanceGlobalPaymentAccounting() external {
-        _advanceGlobalPaymentAccounting();
-    }
+contract LoanManagerHarness is LoanManager {
 
     function __distributeClaimedFunds(
         address loan_,
-        uint256 principal_,
+        int256  principal_,
         uint256 interest_,
         uint256 delegateServiceFee_,
         uint256 platformServiceFee_
@@ -24,20 +15,12 @@ contract LoanManagerHarness is LoanManager, LoanManagerInitializer {
         _distributeClaimedFunds(loan_, principal_, interest_, delegateServiceFee_, platformServiceFee_);
     }
 
-    function __queueNextPayment(address loan, uint256 startDate, uint256 nextPaymentDueDate) external {
-        issuanceRate = _queueNextPayment(loan, startDate, nextPaymentDueDate);
+    function __setAccountedInterest(uint256 accountedInterest_) external {
+        accountedInterest = uint112(accountedInterest_);
     }
 
-    function __setAccountedInterest(uint112 accountedInterest_) external {
-        accountedInterest = accountedInterest_;
-    }
-
-    function __setDomainEnd(uint48 domainEnd_) external {
-        domainEnd = domainEnd_;
-    }
-
-    function __setDomainStart(uint48 domainStart_) external {
-        domainStart = domainStart_;
+    function __setDomainStart(uint256 domainStart_) external {
+        domainStart = uint40(domainStart_);
     }
 
     function __setFactory(address factory_) external {
@@ -48,74 +31,43 @@ contract LoanManagerHarness is LoanManager, LoanManagerInitializer {
         fundsAsset = asset_;
     }
 
-    function __setIncomingNetInterest(uint256 paymentId_, uint128 incomingNetInterest_) external {
-        payments[paymentId_].incomingNetInterest = incomingNetInterest_;
+    function __setImpairmentFor(address loan_, uint256 impairedDate_, bool impairedByGovernor_) external {
+        impairmentFor[loan_] = Impairment(uint40(impairedDate_), impairedByGovernor_);
     }
 
     function __setIssuanceRate(uint256 issuanceRate_) external {
         issuanceRate = issuanceRate_;
     }
 
-    function __setIssuanceRate(uint256 paymentId_, uint256 issuanceRate_) external {
-        payments[paymentId_].issuanceRate = issuanceRate_;
-    }
-
     function __setLocked(uint256 locked_) external {
         _locked = locked_;
     }
 
-    function __setLiquidationInfo(
+    function __setPaymentFor(
         address loan_,
-        bool    isGovernor_,
-        uint256 principal_,
-        uint256 netInterest_,
-        uint256 netLateInterest_,
-        uint256 platformFees_
+        uint256 platformManagementFeeRate_,
+        uint256 delegateManagementFeeRate_,
+        uint256 startDate_,
+        uint256 issuanceRate_
     ) external {
-        liquidationInfo[loan_] = LiquidationInfo({
-            triggeredByGovernor: isGovernor_,
-            principal:           _uint128(principal_),
-            interest:            _uint120(netInterest_),
-            lateInterest:        netLateInterest_,
-            platformFees:        _uint96(platformFees_)
-        });
-    }
-
-    function __setPaymentCounter(uint24 paymentCounter_) external {
-        paymentCounter = paymentCounter_;
-    }
-
-    function __setPaymentDueDate(uint256 paymentId_, uint48 paymentDueDate_) external {
-        payments[paymentId_].paymentDueDate       = paymentDueDate_;
-        sortedPayments[paymentId_].paymentDueDate = paymentDueDate_;
-    }
-
-    function __setPaymentId(address loan_, uint24 paymentId_) external {
-        paymentIdOf[loan_] = paymentId_;
-    }
-
-    function __setPaymentWithEarliestDueDate(uint24 paymentId_) external {
-        paymentWithEarliestDueDate = paymentId_;
-    }
-
-    function __setPool(address pool_) external {
-        pool = pool_;
+        paymentFor[loan_] = Payment(
+            uint24(platformManagementFeeRate_),
+            uint24(delegateManagementFeeRate_),
+            uint40(startDate_),
+            uint168(issuanceRate_)
+        );
     }
 
     function __setPoolManager(address poolManager_) external {
         poolManager = poolManager_;
     }
 
-    function __setPrincipalOut(uint128 principalOut_) external {
-        principalOut = principalOut_;
+    function __setPrincipalOut(uint256 principalOut_) external {
+        principalOut = uint128(principalOut_);
     }
 
-    function __setStartDate(uint256 paymentId_, uint48 startDate_) external {
-        payments[paymentId_].startDate = startDate_;
-    }
-
-    function __setUnrealizedLosses(uint128 unrealizedLosses_) external {
-        unrealizedLosses = unrealizedLosses_;
+    function __setUnrealizedLosses(uint256 unrealizedLosses_) external {
+        unrealizedLosses = uint128(unrealizedLosses_);
     }
 
 }

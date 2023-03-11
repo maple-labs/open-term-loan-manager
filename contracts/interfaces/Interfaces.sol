@@ -1,25 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-interface IERC20Like {
-
-    function balanceOf(address account_) external view returns (uint256 balance_);
-
-    function decimals() external view returns (uint8 decimals_);
-
-}
-
-interface ILiquidatorLike {
-
-    function collateralRemaining() external view returns (uint256 collateralRemaining_);
-
-    function pullFunds(address token_, address destination_, uint256 amount_) external;
-
-    function setCollateralRemaining(uint256 collateralAmount_) external;
-
-}
-
-
 interface ILoanFactoryLike {
 
     function isLoan(address loan_) external view returns (bool isLoan_);
@@ -27,8 +8,6 @@ interface ILoanFactoryLike {
 }
 
 interface IMapleGlobalsLike {
-
-    function getLatestPrice(address asset_) external view returns (uint256 price_);
 
     function governor() external view returns (address governor_);
 
@@ -53,34 +32,21 @@ interface IMapleGlobalsLike {
 
 interface IMapleLoanLike {
 
-    function acceptLender() external;
-
     function borrower() external view returns (address borrower_);
 
-    function call(uint256 principalToReturn_) external returns (uint40 paymentDueDate_);
-
-    function collateralAsset() external view returns(address asset_);
-
-    function datePaid() external view returns (uint40 datePaid_);
-
-    function defaultDate() external view returns (uint40 paymentDefaultDate_);
+    function callPrincipal(uint256 principalToReturn_) external returns (uint40 paymentDueDate_, uint40 defaultDate_);
 
     function factory() external view returns (address factory_);
 
     function fund() external returns (uint256 fundsLent_, uint40 paymentDueDate_, uint40 defaultDate_);
 
-    function isImpaired() external view returns (bool isImpaired_);
-
-    function impair() external returns (uint40 paymentDueDate_);
-
-    function normalPaymentDueDate() external returns (uint40 paymentDueDate_);
+    function impair() external returns (uint40 paymentDueDate_, uint40 defaultDate_);
 
     function paymentDueDate() external view returns (uint40 paymentDueDate_);
 
-    function paymentInterval() external view returns (uint32 paymentInterval_);
-
-    function paymentBreakdown(uint256 timestamp_)
-        external view returns (
+    function paymentBreakdown(uint256 paymentTimestamp_)
+        external view
+        returns (
             uint256 principal_,
             uint256 interest_,
             uint256 lateInterest_,
@@ -91,24 +57,24 @@ interface IMapleLoanLike {
     function principal() external view returns (uint256 principal_);
 
     function proposeNewTerms(
-        address refinancer_, 
-        uint256 deadline_, 
-        bytes[] calldata calls_) 
+        address refinancer_,
+        uint256 deadline_,
+        bytes[] calldata calls_)
         external returns (bytes32 refinanceCommitment_);
 
-    function removeCall() external returns (uint40 paymentDueDate_);
+    function removeCall() external returns (uint40 paymentDueDate_, uint40 defaultDate_);
 
-    function removeImpairment() external returns (uint40 paymentDueDate_);
+    function removeImpairment() external returns (uint40 paymentDueDate_, uint40 defaultDate_);
 
     function repossess(address destination_) external returns (uint256 fundsRepossessed_);
 
+    // TODO: Consider why this is here if there is not yet a way for another loan manager to axcept leadership.
     function setPendingLender(address pendingLender_) external;
 
 }
 
-interface IPoolLike is IERC20Like {
-
-    function asset() external view returns (address asset_);
+// TODO: This can be removed if the initializer took a `poolManager` directly.
+interface IPoolLike {
 
     function manager() external view returns (address manager_);
 
@@ -116,11 +82,15 @@ interface IPoolLike is IERC20Like {
 
 interface IPoolManagerLike {
 
+    function asset() external view returns (address asset_);
+
     function delegateManagementFeeRate() external view returns (uint256 delegateManagementFeeRate_);
 
     function factory() external view returns (address factory_);
 
     function hasSufficientCover() external view returns (bool hasSufficientCover_);
+
+    function pool() external view returns (address pool_);
 
     function poolDelegate() external view returns (address poolDelegate_);
 
