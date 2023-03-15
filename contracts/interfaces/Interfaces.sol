@@ -73,13 +73,6 @@ interface IMapleLoanLike {
 
 }
 
-// TODO: This can be removed if the initializer took a `poolManager` directly.
-interface IPoolLike {
-
-    function manager() external view returns (address manager_);
-
-}
-
 interface IPoolManagerLike {
 
     function asset() external view returns (address asset_);

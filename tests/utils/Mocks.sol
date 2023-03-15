@@ -262,21 +262,6 @@ contract MockLoanFactory {
 
 }
 
-contract MockPool {
-
-    address public asset;
-    address public manager;
-
-    function __setAsset(address asset_) external {
-        asset = asset_;
-    }
-
-    function __setManager(address manager_) external {
-        manager = manager_;
-    }
-
-}
-
 contract MockPoolManager is Spied {
 
     address public asset;

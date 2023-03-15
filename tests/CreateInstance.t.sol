@@ -7,37 +7,29 @@ import { LoanManager }            from "../contracts/LoanManager.sol";
 import { LoanManagerFactory }     from "../contracts/LoanManagerFactory.sol";
 import { LoanManagerInitializer } from "../contracts/LoanManagerInitializer.sol";
 
-import { MockFactory, MockGlobals, MockPool, MockPoolManager } from "./utils/Mocks.sol";
+import { MockFactory, MockGlobals, MockPoolManager } from "./utils/Mocks.sol";
 
 // TODO: This should be a test of just the initializer.
 
-contract LoanManagerFactoryBase is Test {
+contract CreateInstanceTests is Test {
 
-    address asset;
-    address governor;
-    address implementation;
-    address initializer;
-    address treasury;
+    event Initialized(address indexed poolManager_);
 
-    MockFactory     poolManagerFactory;
-    MockGlobals     globals;
-    MockPool        pool;
-    MockPoolManager poolManager;
+    address asset          = makeAddr("asset");
+    address governor       = makeAddr("governor");
+    address implementation = address(new LoanManager());
+    address initializer    = address(new LoanManagerInitializer());
+    address pool           = makeAddr("pool");
+    address poolDeployer   = makeAddr("poolDeployer");
+    address treasury       = makeAddr("treasury");
+
+    MockFactory     poolManagerFactory = new MockFactory();
+    MockGlobals     globals            = new MockGlobals();
+    MockPoolManager poolManager        = new MockPoolManager();
 
     LoanManagerFactory factory;
 
     function setUp() public virtual {
-        asset          = makeAddr("asset");
-        governor       = makeAddr("governor");
-        implementation = address(new LoanManager());
-        initializer    = address(new LoanManagerInitializer());
-        treasury       = makeAddr("treasury");
-
-        globals            = new MockGlobals();
-        pool               = new MockPool();
-        poolManager        = new MockPoolManager();
-        poolManagerFactory = new MockFactory();
-
         globals.__setGovernor(governor);
         globals.setMapleTreasury(treasury);
 
@@ -47,12 +39,10 @@ contract LoanManagerFactoryBase is Test {
         factory.setDefaultVersion(1);
         vm.stopPrank();
 
-        globals.setValidPoolDeployer(address(this), true);
+        globals.setValidPoolDeployer(poolDeployer, true);
 
         poolManager.__setAsset(address(asset));
         poolManager.__setPool(address(pool));
-
-        pool.__setManager(address(poolManager));
     }
 
     function test_createInstance_notPoolDeployer() external {
@@ -86,8 +76,12 @@ contract LoanManagerFactoryBase is Test {
         factory.createInstance(abi.encode(address(pool)), "SALT");
     }
 
-    function test_createInstance_success() external {
-        LoanManager loanManager_ = LoanManager(factory.createInstance(abi.encode(address(pool)), "SALT"));
+    function test_createInstance_success_asPoolDeployer() external {
+        vm.expectEmit();
+        emit Initialized(address(poolManager));
+
+        vm.prank(poolDeployer);
+        LoanManager loanManager_ = LoanManager(factory.createInstance(abi.encode(address(poolManager)), "SALT"));
 
         assertEq(loanManager_.HUNDRED_PERCENT(), 1e6);
         assertEq(loanManager_.PRECISION(),       1e27);
@@ -101,14 +95,14 @@ contract LoanManagerFactoryBase is Test {
         assertEq(loanManager_.poolManager(),     address(poolManager));
     }
 
-    function test_createInstance_withPoolManager() external {
+    function test_createInstance_asPoolManager() external {
         globals.__setIsFactory("POOL_MANAGER", address(poolManagerFactory), true);
         poolManager.__setFactory(address(poolManagerFactory));
         poolManagerFactory.__setIsInstance(address(poolManager), true);
 
         vm.prank(address(poolManager));
 
-        LoanManager loanManager_ = LoanManager(factory.createInstance(abi.encode(address(pool)), "SALT"));
+        LoanManager loanManager_ = LoanManager(factory.createInstance(abi.encode(address(poolManager)), "SALT"));
 
         assertEq(loanManager_.HUNDRED_PERCENT(), 1e6);
         assertEq(loanManager_.PRECISION(),       1e27);
