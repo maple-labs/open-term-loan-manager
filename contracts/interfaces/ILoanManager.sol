@@ -101,13 +101,13 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
     function fund(address loan_) external;
 
     /**
-     *  @dev   Triggers the loan impairment for a loan.
+     *  @dev   Triggers the impairment of a loan.
      *  @param loan_ Loan to trigger the loan impairment.
      */
     function impairLoan(address loan_) external;
 
     /**
-     *  @dev   Triggers the loan impairment for a loan.
+     *  @dev   Proposes new terms for a loan.
      *  @param loan_       The loan to propose new changes to.
      *  @param refinancer_ The refinancer to use in the refinance.
      *  @param deadline_   The deadline by which the borrower must accept the new terms.

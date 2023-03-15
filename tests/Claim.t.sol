@@ -7,12 +7,12 @@ import { LoanManagerHarness } from "./utils/Harnesses.sol";
 import { TestBase }           from "./utils/TestBase.sol";
 
 import {
+    MockFactory,
     MockGlobals,
     MockLoan,
     MockLoanFactory,
-    MockPoolManager,
-    MockFactory }
-from "./utils/Mocks.sol";
+    MockPoolManager
+} from "./utils/Mocks.sol";
 
 contract ClaimTestBase is TestBase {
 
@@ -29,9 +29,6 @@ contract ClaimTestBase is TestBase {
 
     function setUp() public virtual {
         factory.__setGlobals(address(globals));
-
-        globals.__setIsBorrower(true);
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
 
         poolManager.__setAsset(address(asset));
         poolManager.__setPool(pool);

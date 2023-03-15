@@ -29,7 +29,7 @@ contract LoanManagerInitializer is ILoanManagerInitializer, LoanManagerStorage {
     }
 
     fallback() external {
-        _initialize({ poolManager_: decodeArguments(msg.data) });
+        _initialize(decodeArguments(msg.data));
     }
 
 }

@@ -8,7 +8,7 @@ import { MockLoan, MockPoolManager }  from "./utils/Mocks.sol";
 contract ProposeNewTermsTests is TestBase {
 
     address poolDelegate = makeAddr("poolDelegate");
-    address refinancer   = makeAddr("refinancer");  
+    address refinancer   = makeAddr("refinancer");
 
     LoanManagerHarness loanManager = new LoanManagerHarness();
 

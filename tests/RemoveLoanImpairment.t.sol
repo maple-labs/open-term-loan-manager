@@ -31,9 +31,6 @@ contract RemoveLoanImpairmentBase is TestBase {
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
-        globals.__setIsBorrower(true);
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
-
         factory.__setGlobals(address(globals));
 
         globals.__setGovernor(governor);

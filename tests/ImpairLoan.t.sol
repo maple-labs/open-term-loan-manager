@@ -31,9 +31,6 @@ contract ImpairLoanBase is TestBase {
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
-        globals.__setIsBorrower(true);
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
-
         factory.__setGlobals(address(globals));
 
         globals.__setGovernor(governor);
@@ -141,10 +138,10 @@ contract ImpairLoanSuccessTests is ImpairLoanBase {
         loan.__expectCall();
         loan.impair();
 
-        vm.expectEmit(false, false, false, true);
+        vm.expectEmit();
         emit AccountingStateUpdated(0, uint112((issuanceRate * (duration / 2)) / 1e27));
 
-        vm.expectEmit(false, false, false, true);
+        vm.expectEmit();
         emit UnrealizedLossesUpdated(uint112(principal + (issuanceRate * (duration / 2)) / 1e27));
 
         vm.prank(poolDelegate);

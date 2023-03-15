@@ -1,0 +1,13 @@
+name: open-term-loan-manager
+version: 1.0.0-alpha.1
+source: contracts
+packages:
+  - path: contracts/LoanManagerFactory.sol
+    contractName: LoanManagerFactory
+  - path: contracts/LoanManagerInitializer.sol
+    contractName: LoanManagerInitializer
+  - path: contracts/LoanManagerStorage.sol
+    contractName: LoanManagerStorage
+  - path: contracts/LoanManager.sol
+    contractName: LoanManager
+customDescription: Open Term Loan Manager V1 Artifacts and ABIs
