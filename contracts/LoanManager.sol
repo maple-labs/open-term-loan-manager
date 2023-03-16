@@ -442,22 +442,19 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
     function _updateAccountingState(int256 interestAdjustment_, int256 issuanceRateAdjustment_) internal {
         // NOTE: Order of operations is important as `accruedInterest()` depends on the pre-adjusted `issuanceRate` and `domainStart`.
-        // TODO: Underflow protection in case more interest or `issuanceRate` is adjusted down, clamping to 0.
-        accountedInterest = _uint112(_int256(accountedInterest + accruedInterest()) + interestAdjustment_);
+        accountedInterest = _uint112(_max(_int256(accountedInterest + accruedInterest()) + interestAdjustment_, 0));
         domainStart       = _uint40(block.timestamp);
-        issuanceRate      = _uint256(_int256(issuanceRate) + issuanceRateAdjustment_);
+        issuanceRate      = _uint256(_max(_int256(issuanceRate) + issuanceRateAdjustment_, 0));
 
         emit AccountingStateUpdated(issuanceRate, accountedInterest);
     }
 
     function _updatePrincipalOut(int256 principalOutAdjustment_) internal {
-        // TODO: Underflow protection in case more principal is returned, clamping to 0.
-        emit PrincipalOutUpdated(principalOut = _uint128(_int256(principalOut) + principalOutAdjustment_));
+        emit PrincipalOutUpdated(principalOut = _uint128(_max(_int256(principalOut) + principalOutAdjustment_, 0)));
     }
 
-    function _updateUnrealizedLosses(int256 losesAdjustment_) internal {
-        // TODO: Underflow protection in case more unrealized losses are reverted, clamping to 0.
-        emit UnrealizedLossesUpdated(unrealizedLosses = _uint128(_int256(unrealizedLosses) + losesAdjustment_));
+    function _updateUnrealizedLosses(int256 lossesAdjustment_) internal {
+        emit UnrealizedLossesUpdated(unrealizedLosses = _uint128(_max(_int256(unrealizedLosses) + lossesAdjustment_, 0)));
     }
 
     /**************************************************************************************************************************************/
@@ -536,6 +533,10 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     function _int256(uint256 input_) internal pure returns (int256 output_) {
         require(input_ <= uint256(type(int256).max), "LM:UINT256_OOB_FOR_INT256");
         output_ = int256(input_);
+    }
+
+    function _max(int256 a_, int256 b_) internal pure returns (int256 maximum_) {
+        maximum_ = a_ > b_ ? a_ : b_;
     }
 
     function _min(uint256 a_, uint256 b_) internal pure returns (uint256 minimum_) {

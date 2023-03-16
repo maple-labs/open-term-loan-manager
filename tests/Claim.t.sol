@@ -473,4 +473,65 @@ contract ClaimTests is ClaimTestBase {
         assertEq(asset.balanceOf(address(pool)),         principal + netInterest1);
     }
 
+    function test_claim_returnMorePrincipal() external {
+        vm.warp(start + paymentInterval);
+
+        uint256 returnedPrincipal = principal + 500_000e6;
+
+        // Simulate a partial payment in the loan
+        asset.mint(address(loanManager), returnedPrincipal + interest1 + platformServiceFee + delegateServiceFee);
+
+        assertGlobalState({
+            loanManager:           address(loanManager),
+            domainStart:           start,
+            accountedInterest:     0,
+            accruedInterest:       netInterest1,
+            assetsUnderManagement: principal + netInterest1,
+            principalOut:          principal,
+            unrealizedLosses:      0,
+            issuanceRate:          netInterest1 * 1e27 / paymentInterval
+        });
+
+        assertPaymentState({
+            loanManager:  address(loanManager),
+            loan:         address(loan),
+            startDate:    start,
+            issuanceRate: netInterest1 * 1e27 / paymentInterval
+        });
+
+        vm.prank(address(loan));
+        loanManager.claim({
+            principal_:          int256(returnedPrincipal),
+            interest_:           interest1,
+            delegateServiceFee_: delegateServiceFee,
+            platformServiceFee_: platformServiceFee,
+            nextPaymentDueDate_: uint40(start + 2 * paymentInterval)
+        });
+
+        assertGlobalState({
+            loanManager:           address(loanManager),
+            domainStart:           start + paymentInterval,
+            accountedInterest:     0,
+            accruedInterest:       0,
+            assetsUnderManagement: 0,
+            principalOut:          0,
+            unrealizedLosses:      0,
+            issuanceRate:          netInterest2 * 1e27 / paymentInterval
+        });
+
+        assertPaymentState({
+            loanManager:  address(loanManager),
+            loan:         address(loan),
+            startDate:    start + paymentInterval,
+            issuanceRate: netInterest2 * 1e27 / paymentInterval
+        });
+
+        assertEq(asset.allowance(address(loanManager), address(loan)), 0);
+
+        assertEq(asset.balanceOf(address(loanManager)),  0);
+        assertEq(asset.balanceOf(address(poolDelegate)), delegateServiceFee + (interest1 * delegateManagementFeeRate) / 1e6);
+        assertEq(asset.balanceOf(address(treasury)),     platformServiceFee + (interest1 * platformManagementFeeRate) / 1e6);
+        assertEq(asset.balanceOf(address(pool)),         returnedPrincipal + netInterest1);
+    }
+
 }
