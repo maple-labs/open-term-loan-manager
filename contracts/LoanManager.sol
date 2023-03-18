@@ -238,9 +238,6 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         // Always impair before proceeding, to clean up state and streamline remaining logic.
         uint40 impairedDate_ = _accountForLoanImpairment(loan_);
 
-        // Remove the payment and cache the struct.
-        Payment memory payment_ = _removePayment(loan_);
-
         ( , uint256 interest_, uint256 lateInterest_, , uint256 platformServiceFee_ )
             = IMapleLoanLike(loan_).paymentBreakdown(block.timestamp);
 
@@ -257,17 +254,18 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
             unrecoveredPlatformFees_
         ) = _distributeLiquidationFunds(loan_, principal_, interest_, platformServiceFee_, recoveredFunds_);
 
+        // Remove the payment and cache the struct.
+        Payment memory payment_ = _removePayment(loan_);
+
+        // NOTE: This is the amount of interest accounted for, before the loan's impairment,
+        //       that is still in the aggregate `accountedInterest` and offset in `unrealizedLosses`.
+        uint256 accountedImpairedInterest_ = _getIssuance(payment_.issuanceRate, impairedDate_ - payment_.startDate);
+
         // The payment's interest until the `impairedDate` must be deducted from `accountedInterest`, thus realizing the interest loss.
         // The unrealized losses incurred due to the impairment must be deducted from the global `unrealizedLosses`.
-        // If the Loan had not been manually impaired before the default was triggered, the `impairedDate` will be block.timestamp.
         // The the loan's principal must be deducted from `principalOut`, hus realizing the principal loss.
-        _updateAccountingState(
-            -_int256(_getIssuance(payment_.issuanceRate, impairedDate_ - payment_.startDate)),
-            0
-        );
-
-        _updateUnrealizedLosses(-_int256(principal_ + _getIssuance(payment_.issuanceRate, impairedDate_ - payment_.startDate)));
-
+        _updateAccountingState(-_int256(accountedImpairedInterest_), 0);
+        _updateUnrealizedLosses(-_int256(principal_ + accountedImpairedInterest_));
         _updatePrincipalOut(-_int256(principal_));
 
         delete impairmentFor[loan_];
