@@ -136,6 +136,8 @@ contract MockLoan is Spied {
     mapping(uint256 => uint256) _interest;
     mapping(uint256 => uint256) _lateInterest;
 
+    uint256 _platformServiceFee; 
+
     function callPrincipal(uint256) external virtual spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
         ( paymentDueDate_, defaultDate_ ) = ( paymentDueDate, defaultDate );
     }
@@ -170,7 +172,7 @@ contract MockLoan is Spied {
             lateInterest_,
             delegateServiceFee_,
             platformServiceFee_
-        ) = ( 0, _interest[timestamp_], _lateInterest[timestamp_], 0, 0 );
+        ) = ( 0, _interest[timestamp_], _lateInterest[timestamp_], 0, _platformServiceFee );
     }
 
     function proposeNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_)
@@ -241,6 +243,10 @@ contract MockLoan is Spied {
 
     function __setPaymentInterval(uint256 paymentInterval_) external {
         paymentInterval = paymentInterval_;
+    }
+
+    function __setPlatformServiceFee(uint256 platformServiceFee_) external {
+        _platformServiceFee = platformServiceFee_;
     }
 
     function __setPrincipal(uint256 principal_) external {

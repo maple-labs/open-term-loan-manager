@@ -66,13 +66,14 @@ contract TriggerDefaultSuccessTests is TriggerDefaultBase {
     address pool     = makeAddr("pool");
     address treasury = makeAddr("treasury");
 
-    uint256 constant duration     = 1_000_000 seconds;
-    uint256 constant interest     = 1_000e6;
-    uint256 constant issuanceRate = (interest * 1e27) / duration;
-    uint256 constant principal    = 1_000_000e6;
-
     uint256 constant delegateManagementFeeRate = 0.04e6;
+    uint256 constant duration                  = 1_000_000 seconds;
+    uint256 constant interest                  = 1_000e6;
+    uint256 constant issuanceRate              = (interest * 1e27) / duration;
+    uint256 constant lateInterest              = 200e6;
     uint256 constant platformManagementFeeRate = 0.06e6;
+    uint256 constant platformServiceFee        = 50e6;
+    uint256 constant principal                 = 1_000_000e6;
 
     uint256 start       = block.timestamp;
     uint256 defaultDate = start + duration + 1;
@@ -90,7 +91,9 @@ contract TriggerDefaultSuccessTests is TriggerDefaultBase {
         loan.__setBorrower(borrower);
         loan.__setPrincipal(principal);
         loan.__setPaymentDueDate(start + duration);
-        loan.__setInterest(start + duration, interest);
+        loan.__setInterest(defaultDate, interest);
+        loan.__setLateInterest(defaultDate, lateInterest);
+        loan.__setPlatformServiceFee(platformServiceFee);
 
         loanManager.__setDomainStart(start);
         loanManager.__setFundsAsset(address(asset));
@@ -127,9 +130,14 @@ contract TriggerDefaultSuccessTests is TriggerDefaultBase {
             issuanceRate: issuanceRate
         });
 
-        // TODO: Test return.
         vm.prank(address(poolManager));
-        loanManager.triggerDefault(address(loan));
+        ( uint256 remainingLosses_, uint256 platformFees_ ) = loanManager.triggerDefault(address(loan));
+
+        uint256 netInterest             = (interest + lateInterest) * (1e6 - platformManagementFeeRate - delegateManagementFeeRate) / 1e6;
+        uint256 platformManagementFees  = (interest + lateInterest) * platformManagementFeeRate / 1e6;
+
+        assertEq(remainingLosses_, principal + netInterest);
+        assertEq(platformFees_,    platformServiceFee + platformManagementFees);
 
         assertGlobalState({
             loanManager:           address(loanManager),
@@ -159,9 +167,14 @@ contract TriggerDefaultSuccessTests is TriggerDefaultBase {
         loanManager.__setIssuanceRate(0);
         loanManager.__setUnrealizedLosses(principal + interest / 2);
 
-        // TODO: Test return.
         vm.prank(address(poolManager));
-        loanManager.triggerDefault(address(loan));
+        ( uint256 remainingLosses_, uint256 platformFees_ ) = loanManager.triggerDefault(address(loan));
+
+        uint256 netInterest            = (interest + lateInterest) * (1e6 - platformManagementFeeRate - delegateManagementFeeRate) / 1e6;
+        uint256 platformManagementFees = (interest + lateInterest) * platformManagementFeeRate / 1e6;
+
+        assertEq(remainingLosses_, principal + netInterest);
+        assertEq(platformFees_,    platformServiceFee + platformManagementFees);
 
         assertGlobalState({
             loanManager:           address(loanManager),
