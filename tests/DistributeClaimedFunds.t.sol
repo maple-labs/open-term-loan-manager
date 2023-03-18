@@ -39,21 +39,21 @@ contract DistributeClaimedFundsBase is TestBase {
 contract DistributeClaimedFundsFailureTests is DistributeClaimedFundsBase {
 
     function test_distributeClaimFunds_zeroPool() public {
-        vm.expectRevert("LM:DCF:ZERO_ADDRESS_POOL");
+        vm.expectRevert("LM:DCF:TRANSFER_P");
         loanManager.__distributeClaimedFunds(address(loan), 0, 0, 0, 0);
     }
 
     function test_distributeClaimFunds_poolTransfer() public {
         poolManager.__setPool(pool);
 
-        vm.expectRevert("LM:DCF:TRANSFER_POOL");
+        vm.expectRevert("LM:DCF:TRANSFER_P");
         loanManager.__distributeClaimedFunds(address(loan), 0, 1, 0, 0);
     }
 
     function test_distributeClaimFunds_zeroPoolDelegate() public {
         poolManager.__setPool(pool);
 
-        vm.expectRevert("LM:DCF:ZERO_ADDRESS_PD");
+        vm.expectRevert("LM:DCF:TRANSFER_PD");
         loanManager.__distributeClaimedFunds(address(loan), 0, 0, 0, 0);
     }
 
@@ -69,7 +69,7 @@ contract DistributeClaimedFundsFailureTests is DistributeClaimedFundsBase {
         poolManager.__setPool(pool);
         poolManager.__setPoolDelegate(poolDelegate);
 
-        vm.expectRevert("LM:DCF:ZERO_ADDRESS_MT");
+        vm.expectRevert("LM:DCF:TRANSFER_MT");
         loanManager.__distributeClaimedFunds(address(loan), 0, 0, 0, 0);
     }
 

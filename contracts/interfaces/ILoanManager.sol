@@ -11,8 +11,6 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
     /*** Events                                                                                                                         ***/
     /**************************************************************************************************************************************/
 
-    // TODO: Make one FundsDistributed event with all fees and principal and interest.
-
     /**
      *  @dev   Emitted when the accounting state of the loan manager is updated.
      *  @param issuanceRate_      New value for the issuance rate.
@@ -21,20 +19,49 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
     event AccountingStateUpdated(uint256 issuanceRate_, uint112 accountedInterest_);
 
     /**
-     *  @dev   Funds have been claimed and distributed into the Pool.
-     *  @param loan_        The address of the loan contract.
-     *  @param principal_   The amount of principal paid.
-     *  @param netInterest_ The amount of net interest paid.
+     *  @dev   Funds have been claimed and distributed to the Pool, Pool Delegate, and Maple Treasury.
+     *  @param loan_                  The address of the loan contract.
+     *  @param principal_             The amount of principal paid.
+     *  @param netInterest_           The amount of net interest paid.
+     *  @param delegateManagementFee_ The amount of delegate management fees paid.
+     *  @param delegateServiceFee_    The amount of delegate service fees paid.
+     *  @param platformManagementFee_ The amount of platform management fees paid.
+     *  @param platformServiceFee_    The amount of platform service fees paid.
      */
-    event FundsDistributed(address indexed loan_, uint256 principal_, uint256 netInterest_);
+    event ClaimedFundsDistributed(
+        address indexed loan_,
+        uint256 principal_,
+        uint256 netInterest_,
+        uint256 delegateManagementFee_,
+        uint256 delegateServiceFee_,
+        uint256 platformManagementFee_,
+        uint256 platformServiceFee_
+    );
 
     /**
-     *  @dev   A fee payment was made.
+     *  @dev   Funds that were expected to be claimed and distributed to the Pool and Maple Treasury.
      *  @param loan_                  The address of the loan contract.
-     *  @param delegateManagementFee_ The amount of delegate management fee paid.
-     *  @param platformManagementFee_ The amount of platform management fee paid.
-    */
-    event ManagementFeesPaid(address indexed loan_, uint256 delegateManagementFee_, uint256 platformManagementFee_);
+     *  @param principal_             The amount of principal that was expected to be paid.
+     *  @param netInterest_           The amount of net interest that was expected to be paid.
+     *  @param platformManagementFee_ The amount of platform management fees that were expected to be paid.
+     *  @param platformServiceFee_    The amount of platform service fees that were expected to paid.
+     */
+    event ExpectedClaim(
+        address indexed loan_,
+        uint256 principal_,
+        uint256 netInterest_,
+        uint256 platformManagementFee_,
+        uint256 platformServiceFee_
+    );
+
+    /**
+     *  @dev   Funds that were liquidated and distributed to the Pool, Maple Treasury, and Borrower.
+     *  @param loan_       The address of the loan contract that defaulted and was liquidated.
+     *  @param toBorrower_ The amount of recovered funds transferred to the Borrower.
+     *  @param toPool_     The amount of recovered funds transferred to the Pool.
+     *  @param toTreasury_ The amount of recovered funds transferred to the Treasury.
+     */
+    event LiquidatedFundsDistributed(address indexed loan_, uint256 toBorrower_, uint256 toPool_, uint256 toTreasury_);
 
     /**
      *  @dev   Emitted when a payment is removed from the LoanManager payments array.
@@ -129,24 +156,24 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
 
     /**
      *  @dev    Triggers the default of a loan. Different interface for PM to accommodate vs FT-LM.
-     *  @param  loan_                Loan to trigger the default.
-     *  @param  liquidatorFactory_   Address of the liquidator factory (ignored for open-term loans).
-     *  @return liquidationComplete_ If the liquidation is complete (always true for open-term loans)
-     *  @return remainingLosses_     The amount of remaining losses.
-     *  @return platformFees_        The amount of platform fees.
+     *  @param  loan_                    Loan to trigger the default.
+     *  @param  liquidatorFactory_       Address of the liquidator factory (ignored for open-term loans).
+     *  @return liquidationComplete_     If the liquidation is complete (always true for open-term loans)
+     *  @return remainingLosses_         The amount of un-recovered principal and interest (net of management fees).
+     *  @return unrecoveredPlatformFees_ The amount of un-recovered platform fees.
      */
     function triggerDefault(
         address loan_,
         address liquidatorFactory_
-    ) external returns (bool liquidationComplete_, uint256 remainingLosses_, uint256 platformFees_);
+    ) external returns (bool liquidationComplete_, uint256 remainingLosses_, uint256 unrecoveredPlatformFees_);
 
     /**
      *  @dev    Triggers the default of a loan.
-     *  @param  loan_            Loan to trigger the default.
-     *  @return remainingLosses_ The amount of remaining losses.
-     *  @return platformFees_    The amount of platform fees.
+     *  @param  loan_                    Loan to trigger the default.
+     *  @return remainingLosses_         The amount of un-recovered principal and interest (net of management fees).
+     *  @return unrecoveredPlatformFees_ The amount of un-recovered platform fees.
      */
-    function triggerDefault(address loan_) external returns (uint256 remainingLosses_, uint256 platformFees_);
+    function triggerDefault(address loan_) external returns (uint256 remainingLosses_, uint256 unrecoveredPlatformFees_);
 
     /**************************************************************************************************************************************/
     /*** View Functions                                                                                                                 ***/
@@ -175,35 +202,5 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
      *  @return assetsUnderManagement_ The amount of assets under the management of the contract.
      */
     function assetsUnderManagement() external view returns (uint256 assetsUnderManagement_);
-
-    /**
-     *  @dev    Gets the address of the Maple globals contract.
-     *  @return globals_ The address of the Maple globals contract.
-     */
-    function globals() external view returns (address globals_);
-
-    /**
-     *  @dev    Gets the address of the governor contract.
-     *  @return governor_ The address of the governor contract.
-     */
-    function governor() external view returns (address governor_);
-
-    /**
-     *  @dev    Gets the address of the pool.
-     *  @return pool_ The address of the pool.
-     */
-    function pool() external view returns (address pool_);
-
-    /**
-     *  @dev    Gets the address of the pool delegate.
-     *  @return poolDelegate_ The address of the pool delegate.
-     */
-    function poolDelegate() external view returns (address poolDelegate_);
-
-    /**
-     *  @dev    Gets the address of the Maple treasury.
-     *  @return treasury_ The address of the Maple treasury.
-     */
-    function mapleTreasury() external view returns (address treasury_);
 
 }

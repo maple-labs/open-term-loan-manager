@@ -87,11 +87,7 @@ contract CreateInstanceTests is Test {
         assertEq(loanManager_.PRECISION(),       1e27);
         assertEq(loanManager_.factory(),         address(factory));
         assertEq(loanManager_.fundsAsset(),      address(asset));
-        assertEq(loanManager_.globals(),         address(globals));
-        assertEq(loanManager_.governor(),        governor);
         assertEq(loanManager_.implementation(),  implementation);
-        assertEq(loanManager_.mapleTreasury(),   address(treasury));
-        assertEq(loanManager_.pool(),            address(pool));
         assertEq(loanManager_.poolManager(),     address(poolManager));
     }
 
@@ -108,11 +104,7 @@ contract CreateInstanceTests is Test {
         assertEq(loanManager_.PRECISION(),       1e27);
         assertEq(loanManager_.factory(),         address(factory));
         assertEq(loanManager_.fundsAsset(),      address(asset));
-        assertEq(loanManager_.globals(),         address(globals));
-        assertEq(loanManager_.governor(),        governor);
         assertEq(loanManager_.implementation(),  implementation);
-        assertEq(loanManager_.mapleTreasury(),   address(treasury));
-        assertEq(loanManager_.pool(),            address(pool));
         assertEq(loanManager_.poolManager(),     address(poolManager));
     }
 

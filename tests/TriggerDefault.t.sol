@@ -52,7 +52,7 @@ contract TriggerDefaultFailureTests is TriggerDefaultBase {
     }
 
     function test_triggerDefault_notLoan() external {
-        vm.expectRevert("LM:AFLIR:NOT_LOAN");
+        vm.expectRevert("LM:AFLI:NOT_LOAN");
         vm.prank(address(poolManager));
         loanManager.triggerDefault(address(1));
     }
