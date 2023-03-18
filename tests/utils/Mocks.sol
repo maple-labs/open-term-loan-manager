@@ -120,6 +120,8 @@ contract MockLoan is Spied {
     address public factory;
     address public borrower;
 
+    bytes32 public refinanceCommitment;
+
     uint40 public dateImpaired;
     uint40 public datePaid;
     uint40 public dateFunded;
@@ -174,7 +176,17 @@ contract MockLoan is Spied {
     function proposeNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_)
         external virtual spied returns (bytes32 refinanceCommitment_)
     {
-        refinanceCommitment_ =  keccak256(abi.encode(refinancer_, deadline_, calls_));
+        refinancer_; deadline_; calls_;
+
+        refinanceCommitment_ = refinanceCommitment;
+    }
+
+    function rejectNewTerms(address refinancer_, uint256 deadline_, bytes[] calldata calls_)
+        external virtual spied returns (bytes32 refinanceCommitment_)
+    {
+        refinancer_; deadline_; calls_;
+
+        refinanceCommitment_ = refinanceCommitment;
     }
 
     function removeCall() external virtual spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
@@ -233,6 +245,10 @@ contract MockLoan is Spied {
 
     function __setPrincipal(uint256 principal_) external {
         principal = principal_;
+    }
+
+    function __setRefinanceCommitment(bytes32 refinanceCommitment_) external {
+        refinanceCommitment = refinanceCommitment_;
     }
 
 }

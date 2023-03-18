@@ -143,6 +143,15 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
     function proposeNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_) external;
 
     /**
+     *  @dev   Reject/cancel proposed new terms for a loan.
+     *  @param loan_       The loan with the proposed new changes.
+     *  @param refinancer_ The refinancer to use in the refinance.
+     *  @param deadline_   The deadline by which the borrower must accept the new terms.
+     *  @param calls_      The array of calls to be made to the refinancer.
+     */
+    function rejectNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_) external;
+
+    /**
      *  @dev   Removes a loan call.
      *  @param loan_ Loan to remove call for.
      */

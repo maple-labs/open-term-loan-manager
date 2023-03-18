@@ -59,8 +59,14 @@ interface IMapleLoanLike {
     function proposeNewTerms(
         address refinancer_,
         uint256 deadline_,
-        bytes[] calldata calls_)
-        external returns (bytes32 refinanceCommitment_);
+        bytes[] calldata calls_
+    ) external returns (bytes32 refinanceCommitment_);
+
+    function rejectNewTerms(
+        address refinancer_,
+        uint256 deadline_,
+        bytes[] calldata calls_
+    ) external returns (bytes32 refinanceCommitment_);
 
     function removeCall() external returns (uint40 paymentDueDate_, uint40 defaultDate_);
 
@@ -68,7 +74,7 @@ interface IMapleLoanLike {
 
     function repossess(address destination_) external returns (uint256 fundsRepossessed_);
 
-    // TODO: Consider why this is here if there is not yet a way for another loan manager to axcept leadership.
+    // TODO: Consider why this is here if there is not yet a way for another loan manager to accept lendership.
     function setPendingLender(address pendingLender_) external;
 
 }
