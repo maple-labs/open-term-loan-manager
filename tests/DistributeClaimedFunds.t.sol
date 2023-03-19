@@ -8,8 +8,6 @@ import { TestBase }            from "./utils/TestBase.sol";
 
 import { MockGlobals, MockLoan, MockLoanFactory, MockPoolManager, MockFactory } from "./utils/Mocks.sol";
 
-// TODO: Similar tests needed for `_distributeLiquidationFunds`.
-
 contract DistributeClaimedFundsBase is TestBase {
 
     address pool         = makeAddr("pool");
@@ -113,22 +111,23 @@ contract DistributeClaimedFundsTests is DistributeClaimedFundsBase {
     }
 
     // TODO: Handle negative `principal`.
-    function testFuzz_distributeClaimFunds(uint256 principal, uint256 interest, uint256 delegateFee, uint256 platformFee) external {
-        principal   = bound(principal,   1_000e6, 1e30);
-        interest    = bound(interest,    1000e6,  1e30);
-        delegateFee = bound(delegateFee, 10e6,    1e30);
-        platformFee = bound(platformFee, 10e6,    1e30);
+    // TODO: Handle no cover.
+    function testFuzz_distributeClaimFunds(uint256 principal, uint256 interest, uint256 delegateFee, uint256 platformFee) public {
+        principal   = bound(principal,   0, 1e30);
+        interest    = bound(interest,    0, 1e30);
+        delegateFee = bound(delegateFee, 0, 1e30);
+        platformFee = bound(platformFee, 0, 1e30);
 
         asset.mint(address(loanManager), principal + interest + platformFee + delegateFee);
 
         vm.prank(address(loanManager));
         loanManager.__distributeClaimedFunds(address(loan), int256(principal), interest, delegateFee, platformFee);
 
-        uint256 netInterest           = interest * (1e6 - (platformManagementFeeRate + delegateManagementFeeRate)) / 1e6;
         uint256 platformManagementFee = interest * platformManagementFeeRate / 1e6;
         uint256 delegateManagementFee = interest * delegateManagementFeeRate / 1e6;
+        uint256 netInterest           = interest - (delegateManagementFee + platformManagementFee);
 
-        assertApproxEqAbs(asset.balanceOf(pool), principal + netInterest, 2);  // Pool benefits from rounding errors
+        assertEq(asset.balanceOf(pool), principal + netInterest);  // Pool benefits from rounding errors
 
         assertEq(asset.balanceOf(poolDelegate),         delegateFee + delegateManagementFee);
         assertEq(asset.balanceOf(treasury),             platformFee + platformManagementFee);

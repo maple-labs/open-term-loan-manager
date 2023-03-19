@@ -15,6 +15,17 @@ contract LoanManagerHarness is LoanManager {
         _distributeClaimedFunds(loan_, principal_, interest_, delegateServiceFee_, platformServiceFee_);
     }
 
+    function __distributeLiquidationFunds(
+        address loan_,
+        uint256 principal_,
+        uint256 interest_,
+        uint256 platformServiceFee_,
+        uint256 recoveredFunds_
+    )
+        external returns (uint256 remainingLosses_, uint256 unrecoveredPlatformFees_) {
+        return _distributeLiquidationFunds(loan_, principal_, interest_, platformServiceFee_, recoveredFunds_);
+    }
+
     function __setAccountedInterest(uint256 accountedInterest_) external {
         accountedInterest = uint112(accountedInterest_);
     }
