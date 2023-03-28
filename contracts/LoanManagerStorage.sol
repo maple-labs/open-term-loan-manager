@@ -3,8 +3,6 @@ pragma solidity 0.8.7;
 
 import { ILoanManagerStorage } from "./interfaces/ILoanManagerStorage.sol";
 
-// TODO: Fix all uintXXX, resort, and add UNUSED placeholders if needed.
-
 abstract contract LoanManagerStorage is ILoanManagerStorage {
 
     struct Impairment {

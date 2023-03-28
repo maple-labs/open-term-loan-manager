@@ -283,6 +283,160 @@ contract FundSuccessTests is FundTestBase {
         assertEq(asset.allowance(address(loanManager), address(loan_)), principal_);
     }
 
+    function test_fund_principalLimit() external {
+        uint256 interest_        = 1e6 * 1e18;         // 1 million ether
+        uint256 paymentInterval_ = 1 days;
+        uint256 principal_       = type(uint128).max;  // 3.4e38
+
+        assertEq(principal_, 3.40282366920938463463374607431768211455e38);
+
+        expectedIssuanceRate = interest_ * 1e27 / paymentInterval_;
+        expectedPrincipalOut = principal_;
+
+        MockLoan loan_ = new MockLoan();
+
+        loan_.__setFactory(address(loanFactory));
+        loan_.__setPaymentDueDate(block.timestamp + paymentInterval_);
+        loan_.__setInterest(block.timestamp + paymentInterval_, interest_);
+
+        loanFactory.__setIsLoan(address(loan_), true);
+
+        asset.mint(address(loan_), principal_);
+
+        loan_.__setFundsLent(principal_ + 1);
+        loan_.__setPrincipal(principal_ + 1);
+
+        loan_.__expectCall();
+        loan_.fund();
+
+        vm.prank(poolDelegate);
+        vm.expectRevert("LM:INT256_OOB_FOR_UINT128");
+        loanManager.fund(address(loan_));
+
+        loan_.__setFundsLent(principal_);
+        loan_.__setPrincipal(principal_);
+
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan_));
+
+        assertGlobalState({
+            loanManager:           address(loanManager),
+            domainStart:           block.timestamp,
+            accountedInterest:     0,
+            accruedInterest:       0,
+            assetsUnderManagement: expectedPrincipalOut,
+            principalOut:          expectedPrincipalOut,
+            unrealizedLosses:      0,
+            issuanceRate:          expectedIssuanceRate
+        });
+    }
+
+    function test_fund_startDateAndDomainStartLimit() external {
+        uint256 interest_        = 1_000 * 1e18;
+        uint256 paymentInterval_ = 1 seconds;  // 1 second since max uint40 value is used for due date.
+        uint256 principal_       = 1_000_0000 * 1e18;
+
+        uint256 lastValidStartDate = type(uint40).max - 1 seconds;
+
+        assertEq(lastValidStartDate / 365 days, 34_865);  // 1970 + 34,865 = year 36,835
+
+        expectedIssuanceRate = interest_ * 1e27 / paymentInterval_;
+        expectedPrincipalOut = principal_;
+
+        MockLoan loan_ = new MockLoan();
+
+        loan_.__setFactory(address(loanFactory));
+        loan_.__setFundsLent(principal_);
+        loan_.__setPrincipal(principal_);
+        loan_.__setPaymentDueDate(type(uint40).max);       // Set to max uint40 value
+        loan_.__setInterest(type(uint40).max, interest_);  // Set to max uint40 value
+
+        loanFactory.__setIsLoan(address(loan_), true);
+
+        asset.mint(address(loan_), principal_);
+
+        loan_.fund();
+
+        vm.warp(lastValidStartDate + 1);  // Warp to 1 day before the max uint40 value to avoid division by 0 errors
+
+        vm.expectRevert();
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan_));
+
+        vm.warp(lastValidStartDate);
+
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan_));
+
+        assertGlobalState({
+            loanManager:           address(loanManager),
+            domainStart:           lastValidStartDate,
+            accountedInterest:     0,
+            accruedInterest:       0,
+            assetsUnderManagement: expectedPrincipalOut,
+            principalOut:          expectedPrincipalOut,
+            unrealizedLosses:      0,
+            issuanceRate:          expectedIssuanceRate
+        });
+
+        assertPaymentState({
+            loanManager:  address(loanManager),
+            loan:         address(loan_),
+            startDate:    lastValidStartDate,
+            issuanceRate: interest_ * 1e27 / paymentInterval_
+        });
+    }
+
+    function test_fund_managementFeeRateLimits() external {
+        uint256 interest_        = 3.2e10 * 1e18;  // 32 billion ether
+        uint256 paymentInterval_ = 1 days;
+        uint256 principal_       = 1e12 * 1e18;    // 1 trillion ether
+
+        expectedIssuanceRate = 0; // No issuance rate because of the management fee
+        expectedPrincipalOut = principal_;
+
+        globals.setPlatformManagementFeeRate(address(poolManager), 1e6);  // Even though is type uint24 can't be greater than 1e6 i.e. 100%
+
+        poolManager.setDelegateManagementFeeRate(type(uint24).max);
+
+        MockLoan loan_ = new MockLoan();
+
+        loan_.__setFactory(address(loanFactory));
+        loan_.__setFundsLent(principal_);
+        loan_.__setPrincipal(principal_);
+        loan_.__setPaymentDueDate(block.timestamp + paymentInterval_);       // Set to max uint40 value
+        loan_.__setInterest(block.timestamp + paymentInterval_, interest_);
+
+        loanFactory.__setIsLoan(address(loan_), true);
+
+        asset.mint(address(loan_), principal_);
+
+        loan_.fund();
+
+        vm.prank(poolDelegate);
+        loanManager.fund(address(loan_));
+
+        assertGlobalState({
+            loanManager:           address(loanManager),
+            domainStart:           block.timestamp,
+            accountedInterest:     0,
+            accruedInterest:       0,
+            assetsUnderManagement: expectedPrincipalOut,
+            principalOut:          expectedPrincipalOut,
+            unrealizedLosses:      0,
+            issuanceRate:          expectedIssuanceRate
+        });
+
+        assertPaymentState({
+            loanManager:               address(loanManager),
+            loan:                      address(loan_),
+            startDate:                 block.timestamp,
+            issuanceRate:              expectedIssuanceRate,
+            platformManagementFeeRate: 1e6,
+            delegateManagementFeeRate: 0  // Value gets clamped to 0 as the sum of managementFeeRates can't be greater than 1e6
+        });
+    }
+
     function randomize(uint256 seed, uint256 salt1, string memory salt2) internal pure returns (uint256) {
         return uint256(keccak256(abi.encodePacked(seed, salt1, salt2)));
     }
