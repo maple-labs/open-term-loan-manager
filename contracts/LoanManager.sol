@@ -239,7 +239,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         uint40 impairedDate_ = _accountForLoanImpairment(loan_);
 
         ( , uint256 interest_, uint256 lateInterest_, , uint256 platformServiceFee_ )
-            = IMapleLoanLike(loan_).paymentBreakdown(block.timestamp);
+            = IMapleLoanLike(loan_).paymentBreakdown(impairedDate_);
 
         uint256 principal_ = IMapleLoanLike(loan_).principal();
 

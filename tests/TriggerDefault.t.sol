@@ -75,8 +75,9 @@ contract TriggerDefaultSuccessTests is TriggerDefaultBase {
     uint256 constant platformServiceFee        = 50e6;
     uint256 constant principal                 = 1_000_000e6;
 
-    uint256 start       = block.timestamp;
-    uint256 defaultDate = start + duration + 1;
+    uint256 start        = block.timestamp;
+    uint256 defaultDate  = start + duration + 1 seconds;
+    uint256 impairedDate = start + duration / 2;
 
     MockLoan  loan  = new MockLoan();
     MockERC20 asset = new MockERC20("A", "A", 18);
@@ -91,6 +92,7 @@ contract TriggerDefaultSuccessTests is TriggerDefaultBase {
         loan.__setBorrower(borrower);
         loan.__setPrincipal(principal);
         loan.__setPaymentDueDate(start + duration);
+        loan.__setInterest(impairedDate, interest / 2);
         loan.__setInterest(defaultDate, interest);
         loan.__setLateInterest(defaultDate, lateInterest);
         loan.__setPlatformServiceFee(platformServiceFee);
@@ -111,7 +113,7 @@ contract TriggerDefaultSuccessTests is TriggerDefaultBase {
         vm.warp(defaultDate);
     }
 
-    function test_triggerDefault_success() external {
+    function test_triggerDefault_success_notImpaired() external {
         assertGlobalState({
             loanManager:           address(loanManager),
             domainStart:           start,
@@ -159,8 +161,6 @@ contract TriggerDefaultSuccessTests is TriggerDefaultBase {
     }
 
     function test_triggerDefault_success_impaired() external {
-        uint256 impairedDate = start + duration / 2;
-
         loanManager.__setAccountedInterest(interest / 2);
         loanManager.__setDomainStart(impairedDate);
         loanManager.__setImpairmentFor(address(loan), impairedDate, false);
@@ -170,8 +170,8 @@ contract TriggerDefaultSuccessTests is TriggerDefaultBase {
         vm.prank(address(poolManager));
         ( uint256 remainingLosses_, uint256 platformFees_ ) = loanManager.triggerDefault(address(loan));
 
-        uint256 netInterest            = (interest + lateInterest) * (1e6 - platformManagementFeeRate - delegateManagementFeeRate) / 1e6;
-        uint256 platformManagementFees = (interest + lateInterest) * platformManagementFeeRate / 1e6;
+        uint256 netInterest            = interest / 2 * (1e6 - platformManagementFeeRate - delegateManagementFeeRate) / 1e6;
+        uint256 platformManagementFees = interest / 2 * platformManagementFeeRate / 1e6;
 
         assertEq(remainingLosses_, principal + netInterest);
         assertEq(platformFees_,    platformServiceFee + platformManagementFees);
