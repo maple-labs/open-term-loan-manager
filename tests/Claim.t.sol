@@ -47,6 +47,19 @@ contract ClaimTestBase is TestBase {
 
 contract ClaimFailureTests is ClaimTestBase {
 
+    function test_claim_notPaused() public {
+        globals.__setProtocolPaused(true);
+
+        vm.expectRevert("LM:PAUSED");
+        loanManager.claim({
+            principal_:          1,
+            interest_:           0,
+            delegateServiceFee_: 0,
+            platformServiceFee_: 0,
+            nextPaymentDueDate_: 0
+        });
+    }
+
     function test_claim_reentrancy() public {
         // TODO: Needs reentering ERC20.
     }

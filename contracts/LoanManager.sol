@@ -67,7 +67,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         _setImplementation(implementation_);
     }
 
-    function upgrade(uint256 version_, bytes calldata arguments_) external override {
+    function upgrade(uint256 version_, bytes calldata arguments_) external override notPaused {
         IMapleGlobalsLike globals_ = IMapleGlobalsLike(_globals());
 
         if (msg.sender == _poolDelegate()) {
@@ -135,7 +135,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         uint256 platformServiceFee_,
         uint40  nextPaymentDueDate_
     )
-        external override isLoan(msg.sender) nonReentrant
+        external override notPaused isLoan(msg.sender) nonReentrant
     {
         uint256 principalRemaining_ = IMapleLoanLike(msg.sender).principal();
 
@@ -242,7 +242,10 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     {
         require(msg.sender == poolManager, "LM:TD:NOT_PM");
 
-        // Always impair before proceeding, to clean up state and streamline remaining logic.
+        // Note: Always impair before proceeding, this ensures a consistent approach to reduce the `accountedInterest` for the Loan.
+        //       If the Loan is already impaired, this will be a no-op and just return the `impairedDate`.
+        //       If the Loan is not impaired, the accountedInterest will be updated to block.timestamp,
+        //       which will include the total interest due for the Loan.
         uint40 impairedDate_ = _accountForLoanImpairment(loan_);
 
         ( , uint256 interest_, uint256 lateInterest_, , uint256 platformServiceFee_ )
@@ -265,7 +268,9 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         Payment memory payment_ = _removePayment(loan_);
 
         // NOTE: This is the amount of interest accounted for, before the loan's impairment,
-        //       that is still in the aggregate `accountedInterest` and offset in `unrealizedLosses`.
+        //       that is still in the aggregate `accountedInterest` and offset in `unrealizedLosses`
+        //       The original `impairedDate` is always used over the current `impairedDate` on the Loan,
+        //       this ensures the interest calculated for `unrealizedLosses` matches the original impairment calculation.
         uint256 accountedImpairedInterest_ = _getIssuance(payment_.issuanceRate, impairedDate_ - payment_.startDate);
 
         // The payment's interest until the `impairedDate` must be deducted from `accountedInterest`, thus realizing the interest loss.
@@ -361,7 +366,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         _updateUnrealizedLosses(-_int256(principal_ + _getIssuance(payment_.issuanceRate, impairedDate_ - payment_.startDate)));
 
         // Account for all interest until now, adjusting for payment's interest between its impairment date and now,
-        // then add payment's `issuanceRate` from global `issuanceRate`.
+        // then add payment's `issuanceRate` to the global `issuanceRate`.
         // NOTE: Upon impairment, for payment's interest between its start date and its impairment date were accounted for.
         _updateInterestAccounting(
             _int256(_getIssuance(payment_.issuanceRate, block.timestamp - impairedDate_)),
@@ -456,7 +461,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         // Request funds from pool manager.
         IPoolManagerLike(poolManager).requestFunds(address(this), amount_);
 
-        // Approve the loan to use this funds.
+        // Approve the loan to use these funds.
         require(ERC20Helper.approve(fundsAsset, loan_, amount_), "LM:PFFL:APPROVE_FAILED");
     }
 
@@ -611,7 +616,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
     function _uint256(int256 input_) internal pure returns (uint256 output_) {
         require(input_ >= 0, "LM:INT256_OOB_FOR_UINT256");
-        output_ = uint256(uint256(input_));
+        output_ = uint256(input_);
     }
 
 }
