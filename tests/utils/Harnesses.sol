@@ -89,8 +89,8 @@ contract LoanManagerHarness is LoanManager {
         _updateUnrealizedLosses(lossesAdjustments_);
     }
 
-    function __updateAccountingState(int256 accruedInterest_, int256 issuanceRate_) external {
-        _updateAccountingState(accruedInterest_, issuanceRate_);
+    function __updateInterestAccounting(int256 interestAdjustment_, int256 issuanceRate_) external {
+        _updateInterestAccounting(interestAdjustment_, issuanceRate_);
     }
 
 }

@@ -58,7 +58,7 @@ contract UpdateUnrealizedLossesTests is InternalTestBase {
 
 contract UpdateAccountingStateTests is InternalTestBase {
 
-    function testFuzz_updateAccountingState(
+    function testFuzz_updateInterestAccounting(
         uint256 periodElapsed,
         uint256 initialAccountedInterest,
         uint256 initialIssuanceRate,
@@ -81,7 +81,7 @@ contract UpdateAccountingStateTests is InternalTestBase {
 
         uint256 accruedInterest = loanManager.accruedInterest();
 
-        loanManager.__updateAccountingState(accountedInterestAdjustment, issuanceRateAdjustment);
+        loanManager.__updateInterestAccounting(accountedInterestAdjustment, issuanceRateAdjustment);
 
         assertEq(loanManager.domainStart(), block.timestamp);
 

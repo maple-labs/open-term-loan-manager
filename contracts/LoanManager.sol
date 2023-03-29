@@ -109,7 +109,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
         Payment memory payment_ = _addPayment(loan_);
 
-        _updateAccountingState(0, _int256(payment_.issuanceRate));
+        _updateInterestAccounting(0, _int256(payment_.issuanceRate));
     }
 
     function proposeNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_) external override {
@@ -165,7 +165,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
         // If no new payment to track, update accounting and account for discrepancies in paid interest vs accrued interest since the
         // payment's start date, and exit.
-        if (nextPaymentDueDate_ == 0) return _updateAccountingState(interestAdjustment_, -_int256(claimedPayment_.issuanceRate));
+        if (nextPaymentDueDate_ == 0) return _updateInterestAccounting(interestAdjustment_, -_int256(claimedPayment_.issuanceRate));
 
         if (principal_ < 0) {
             // TODO: Need to check borrower is still whitelisted?
@@ -177,7 +177,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         Payment memory nextPayment_ = _addPayment(msg.sender);
 
         // Update accounting and account for discrepancies in paid interest vs accrued interest since the payment's start date, and exit.
-        _updateAccountingState(interestAdjustment_, _int256(nextPayment_.issuanceRate) - _int256(claimedPayment_.issuanceRate));
+        _updateInterestAccounting(interestAdjustment_, _int256(nextPayment_.issuanceRate) - _int256(claimedPayment_.issuanceRate));
     }
 
     /**************************************************************************************************************************************/
@@ -271,7 +271,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         // The payment's interest until the `impairedDate` must be deducted from `accountedInterest`, thus realizing the interest loss.
         // The unrealized losses incurred due to the impairment must be deducted from the global `unrealizedLosses`.
         // The the loan's principal must be deducted from `principalOut`, hus realizing the principal loss.
-        _updateAccountingState(-_int256(accountedImpairedInterest_), 0);
+        _updateInterestAccounting(-_int256(accountedImpairedInterest_), 0);
         _updateUnrealizedLosses(-_int256(principal_ + accountedImpairedInterest_));
         _updatePrincipalOut(-_int256(principal_));
 
@@ -327,7 +327,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         impairmentFor[loan_] = Impairment(impairedDate_ = _uint40(block.timestamp), isGovernor_);
 
         // Account for all interest until now (including this payment's), then remove payment's `issuanceRate` from global `issuanceRate`.
-        _updateAccountingState(0, -_int256(payment_.issuanceRate));
+        _updateInterestAccounting(0, -_int256(payment_.issuanceRate));
 
         uint256 principal_ = IMapleLoanLike(loan_).principal();
 
@@ -363,7 +363,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         // Account for all interest until now, adjusting for payment's interest between its impairment date and now,
         // then add payment's `issuanceRate` from global `issuanceRate`.
         // NOTE: Upon impairment, for payment's interest between its start date and its impairment date were accounted for.
-        _updateAccountingState(
+        _updateInterestAccounting(
             _int256(_getIssuance(payment_.issuanceRate, block.timestamp - impairedDate_)),
             _int256(payment_.issuanceRate)
         );
@@ -472,7 +472,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         success_ = (to_ != address(0)) && ((amount_ == 0) || ERC20Helper.transfer(asset_, to_, amount_));
     }
 
-    function _updateAccountingState(int256 interestAdjustment_, int256 issuanceRateAdjustment_) internal {
+    function _updateInterestAccounting(int256 interestAdjustment_, int256 issuanceRateAdjustment_) internal {
         // NOTE: Order of operations is important as `accruedInterest()` depends on the pre-adjusted `issuanceRate` and `domainStart`.
         accountedInterest = _uint112(_max(_int256(accountedInterest + accruedInterest()) + interestAdjustment_, 0));
         domainStart       = _uint40(block.timestamp);
