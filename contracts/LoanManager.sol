@@ -30,6 +30,12 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Modifiers                                                                                                                      ***/
     /**************************************************************************************************************************************/
 
+    modifier isLoan(address loan_) {
+        require(paymentFor[loan_].startDate != 0, "LM:NOT_LOAN");
+
+        _;
+    }
+
     modifier notPaused() {
         require(!IMapleGlobalsLike(_globals()).protocolPaused(), "LM:PAUSED");
 
@@ -129,7 +135,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         uint256 platformServiceFee_,
         uint40  nextPaymentDueDate_
     )
-        external override nonReentrant
+        external override isLoan(msg.sender) nonReentrant
     {
         uint256 principalRemaining_ = IMapleLoanLike(msg.sender).principal();
 
@@ -195,7 +201,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Loan Impairment Functions                                                                                                      ***/
     /**************************************************************************************************************************************/
 
-    function impairLoan(address loan_) external override notPaused {
+    function impairLoan(address loan_) external override notPaused isLoan(loan_) {
         bool isGovernor_ = msg.sender == _governor();
 
         require(isGovernor_ || msg.sender == _poolDelegate(), "LM:IL:NO_AUTH");
@@ -209,7 +215,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         }
     }
 
-    function removeLoanImpairment(address loan_) external override notPaused {
+    function removeLoanImpairment(address loan_) external override notPaused isLoan(loan_) {
         ( , bool impairedByGovernor ) = _accountForLoanImpairmentRemoval(loan_);
 
         require(msg.sender == _governor() || (!impairedByGovernor && msg.sender == _poolDelegate()), "LM:RLI:NO_AUTH");
@@ -221,10 +227,9 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Loan Default Functions                                                                                                         ***/
     /**************************************************************************************************************************************/
 
-    function triggerDefault(
-        address loan_,
-        address liquidatorFactory_
-    ) external override returns (bool liquidationComplete_, uint256 remainingLosses_, uint256 unrecoveredPlatformFees_) {
+    function triggerDefault(address loan_, address liquidatorFactory_)
+        external override returns (bool liquidationComplete_, uint256 remainingLosses_, uint256 unrecoveredPlatformFees_)
+    {
         liquidatorFactory_;  // Silence compiler warning.
 
         ( remainingLosses_, unrecoveredPlatformFees_ ) = triggerDefault(loan_);
@@ -232,7 +237,9 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         liquidationComplete_ = true;
     }
 
-    function triggerDefault(address loan_) public override notPaused returns (uint256 remainingLosses_, uint256 unrecoveredPlatformFees_) {
+    function triggerDefault(address loan_)
+        public override notPaused isLoan(loan_) returns (uint256 remainingLosses_, uint256 unrecoveredPlatformFees_)
+    {
         require(msg.sender == poolManager, "LM:TD:NOT_PM");
 
         // Always impair before proceeding, to clean up state and streamline remaining logic.
@@ -313,8 +320,6 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     function _accountForLoanImpairment(address loan_, bool isGovernor_) internal returns (uint40 impairedDate_) {
         Payment memory payment_ = paymentFor[loan_];
 
-        require(payment_.startDate != 0, "LM:AFLI:NOT_LOAN");
-
         impairedDate_ = impairmentFor[loan_].impairedDate;
 
         if (impairedDate_ != 0) return impairedDate_;
@@ -340,8 +345,6 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
     function _accountForLoanImpairmentRemoval(address loan_) internal returns (uint40 impairedDate_, bool impairedByGovernor_) {
         Payment memory payment_ = paymentFor[loan_];
-
-        require(payment_.startDate != 0, "LM:AFLIR:NOT_LOAN");
 
         Impairment memory impairment_ = impairmentFor[loan_];
 

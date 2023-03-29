@@ -51,7 +51,20 @@ contract ClaimFailureTests is ClaimTestBase {
         // TODO: Needs reentering ERC20.
     }
 
+    function test_claim_notLoan() public {
+        vm.expectRevert("LM:NOT_LOAN");
+        vm.prank(address(loan));
+        loanManager.claim({
+            principal_:          1,
+            interest_:           0,
+            delegateServiceFee_: 0,
+            platformServiceFee_: 0,
+            nextPaymentDueDate_: 0
+        });
+    }
+
     function test_claim_invalidState1() public {
+        loanManager.__setPaymentFor(address(loan), 0, 0, block.timestamp, 0);
         // Requesting more principal but providing no new payment due date.
         vm.expectRevert("LM:C:INVALID");
         vm.prank(address(loan));
@@ -65,6 +78,7 @@ contract ClaimFailureTests is ClaimTestBase {
     }
 
     function test_claim_invalidState2() public {
+        loanManager.__setPaymentFor(address(loan), 0, 0, block.timestamp, 0);
         // Requesting more principal but stating that there is no principal remaining (since `loan.principal() == 0`).
         vm.expectRevert("LM:C:INVALID");
         vm.prank(address(loan));
@@ -78,6 +92,7 @@ contract ClaimFailureTests is ClaimTestBase {
     }
 
     function test_claim_invalidState3() public {
+        loanManager.__setPaymentFor(address(loan), 0, 0, block.timestamp, 0);
         // Regardless of claim principal, next payment due date provided with no principal remaining (since `loan.principal() == 0`).
         vm.expectRevert("LM:C:INVALID");
         vm.prank(address(loan));
@@ -91,6 +106,7 @@ contract ClaimFailureTests is ClaimTestBase {
     }
 
     function test_claim_invalidState4() public {
+        loanManager.__setPaymentFor(address(loan), 0, 0, block.timestamp, 0);
         // Regardless of claim principal, no next payment due date provided despite principal remaining.
         loan.__setPrincipal(1);
 
@@ -98,18 +114,6 @@ contract ClaimFailureTests is ClaimTestBase {
         vm.prank(address(loan));
         loanManager.claim({
             principal_:          0,
-            interest_:           0,
-            delegateServiceFee_: 0,
-            platformServiceFee_: 0,
-            nextPaymentDueDate_: 0
-        });
-    }
-
-    function test_claim_notLoan() public {
-        vm.expectRevert("LM:AFLIR:NOT_LOAN");
-        vm.prank(address(loan));
-        loanManager.claim({
-            principal_:          1,
             interest_:           0,
             delegateServiceFee_: 0,
             platformServiceFee_: 0,

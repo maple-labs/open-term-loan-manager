@@ -46,14 +46,16 @@ contract TriggerDefaultFailureTests is TriggerDefaultBase {
         loanManager.triggerDefault(address(1));
     }
 
-    function test_triggerDefault_notPoolDelegate() external {
-        vm.expectRevert("LM:TD:NOT_PM");
+    function test_triggerDefault_notLoan() external {
+        vm.expectRevert("LM:NOT_LOAN");
+        vm.prank(address(poolManager));
         loanManager.triggerDefault(address(1));
     }
 
-    function test_triggerDefault_notLoan() external {
-        vm.expectRevert("LM:AFLI:NOT_LOAN");
-        vm.prank(address(poolManager));
+    function test_triggerDefault_notPoolDelegate() external {
+        loanManager.__setPaymentFor(address(1), 0, 0, block.timestamp, 0);
+
+        vm.expectRevert("LM:TD:NOT_PM");
         loanManager.triggerDefault(address(1));
     }
 

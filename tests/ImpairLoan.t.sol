@@ -56,14 +56,16 @@ contract ImpairLoanFailureTests is ImpairLoanBase {
         loanManager.impairLoan(address(loan));
     }
 
-    function test_impairLoan_notPoolDelegateOrGovernor() external {
-        vm.expectRevert("LM:IL:NO_AUTH");
+    function test_impairLoan_notLoan() external {
+        vm.expectRevert("LM:NOT_LOAN");
+        vm.prank(poolDelegate);
         loanManager.impairLoan(address(loan));
     }
 
-    function test_impairLoan_notLoan() external {
-        vm.expectRevert("LM:AFLI:NOT_LOAN");
-        vm.prank(poolDelegate);
+    function test_impairLoan_notPoolDelegateOrGovernor() external {
+        loanManager.__setPaymentFor(address(loan), 0, 0, block.timestamp, 0);
+
+        vm.expectRevert("LM:IL:NO_AUTH");
         loanManager.impairLoan(address(loan));
     }
 

@@ -57,7 +57,7 @@ contract RemoveLoanImpairmentFailureTests is RemoveLoanImpairmentBase {
     }
 
     function test_removeLoanImpairment_notLoan() external {
-        vm.expectRevert("LM:AFLIR:NOT_LOAN");
+        vm.expectRevert("LM:NOT_LOAN");
         vm.prank(poolDelegate);
         loanManager.removeLoanImpairment(address(loan));
     }
