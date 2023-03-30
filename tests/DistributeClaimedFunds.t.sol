@@ -26,6 +26,7 @@ contract DistributeClaimedFundsBase is TestBase {
         factory.__setGlobals(address(globals));
 
         poolManager.__setAsset(address(asset));
+        poolManager.__setHasSufficientCover(true);
 
         loanManager.__setFactory(address(factory));
         loanManager.__setFundsAsset(address(asset));
@@ -112,26 +113,40 @@ contract DistributeClaimedFundsTests is DistributeClaimedFundsBase {
 
     // TODO: Handle negative `principal`.
     // TODO: Handle no cover.
-    function testFuzz_distributeClaimFunds(uint256 principal, uint256 interest, uint256 delegateFee, uint256 platformFee) public {
-        principal   = bound(principal,   0, 1e30);
-        interest    = bound(interest,    0, 1e30);
-        delegateFee = bound(delegateFee, 0, 1e30);
-        platformFee = bound(platformFee, 0, 1e30);
+    function testFuzz_distributeClaimFunds(
+        int256  principal,
+        uint256 interest,
+        uint256 delegateServiceFee,
+        uint256 platformServiceFee,
+        bool    isCovered
+    )
+        public
+    {
+        principal          = bound(principal,          -1e30, 1e30);
+        interest           = bound(interest,           0,     1e30);
+        delegateServiceFee = bound(delegateServiceFee, 0,     1e30);
+        platformServiceFee = bound(platformServiceFee, 0,     1e30);
 
-        asset.mint(address(loanManager), principal + interest + platformFee + delegateFee);
+        uint256 clampedPrincipal = principal < 0 ? 0 : uint256(principal);
+
+        asset.mint(address(loanManager), clampedPrincipal + interest + delegateServiceFee + platformServiceFee);
+
+        poolManager.__setHasSufficientCover(isCovered);
 
         vm.prank(address(loanManager));
-        loanManager.__distributeClaimedFunds(address(loan), int256(principal), interest, delegateFee, platformFee);
+        loanManager.__distributeClaimedFunds(address(loan), int256(principal), interest, delegateServiceFee, platformServiceFee);
 
         uint256 platformManagementFee = interest * platformManagementFeeRate / 1e6;
         uint256 delegateManagementFee = interest * delegateManagementFeeRate / 1e6;
-        uint256 netInterest           = interest - (delegateManagementFee + platformManagementFee);
 
-        assertEq(asset.balanceOf(pool), principal + netInterest);  // Pool benefits from rounding errors
+        uint256 toPool     = clampedPrincipal + interest - delegateManagementFee - platformManagementFee;
+        uint256 toDelegate = delegateServiceFee + delegateManagementFee;
+        uint256 toTreasury = platformServiceFee + platformManagementFee;
 
-        assertEq(asset.balanceOf(poolDelegate),         delegateFee + delegateManagementFee);
-        assertEq(asset.balanceOf(treasury),             platformFee + platformManagementFee);
         assertEq(asset.balanceOf(address(loanManager)), 0);
+        assertEq(asset.balanceOf(pool),                 isCovered ? toPool     : toPool + delegateManagementFee);
+        assertEq(asset.balanceOf(poolDelegate),         isCovered ? toDelegate : 0);
+        assertEq(asset.balanceOf(treasury),             isCovered ? toTreasury : toTreasury + delegateServiceFee);
     }
 
 }

@@ -33,6 +33,7 @@ contract ClaimTestBase is TestBase {
         poolManager.__setAsset(address(asset));
         poolManager.__setPool(pool);
         poolManager.__setPoolDelegate(address(poolDelegate));
+        poolManager.__setHasSufficientCover(true);
 
         loan.__setFactory(address(loanFactory));
 

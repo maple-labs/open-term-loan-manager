@@ -385,13 +385,16 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     {
         Payment memory payment_ = paymentFor[loan_];
 
+        uint256 delegateManagementFee_ = _getRatedAmount(interest_, payment_.delegateManagementFeeRate);
         uint256 platformManagementFee_ = _getRatedAmount(interest_, payment_.platformManagementFeeRate);
 
-        uint256 delegateManagementFee_;
+        // If the coverage is not sufficient move the delegate service fee to the platform and remove the delegate management fee.
+        if (!IPoolManagerLike(poolManager).hasSufficientCover()) {
+            platformServiceFee_ += delegateServiceFee_;
 
-        ( interest_, delegateServiceFee_, delegateManagementFee_ ) = IPoolManagerLike(poolManager).hasSufficientCover()
-            ? ( interest_, delegateServiceFee_, _getRatedAmount(interest_, payment_.delegateManagementFeeRate) )
-            : ( interest_ + delegateServiceFee_, 0, 0 );
+            delegateServiceFee_    = 0;
+            delegateManagementFee_ = 0;
+        }
 
         uint256 netInterest_ = interest_ - (platformManagementFee_ + delegateManagementFee_);
 
@@ -400,22 +403,18 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         emit ClaimedFundsDistributed(
             loan_,
             uint256(principal_),
-            netInterest_,
+            interest_,
             delegateManagementFee_,
             delegateServiceFee_,
             platformManagementFee_,
             platformServiceFee_
         );
 
-        uint256 toPool_      = uint256(principal_) + netInterest_;
-        uint256 delegateFee_ = delegateServiceFee_ + delegateManagementFee_;
-        uint256 platformFee_ = platformServiceFee_ + platformManagementFee_;
-
         address fundsAsset_ = fundsAsset;
 
-        require(_transfer(fundsAsset_, _pool(),         toPool_),      "LM:DCF:TRANSFER_P");
-        require(_transfer(fundsAsset_, _poolDelegate(), delegateFee_), "LM:DCF:TRANSFER_PD");
-        require(_transfer(fundsAsset_, _treasury(),     platformFee_), "LM:DCF:TRANSFER_MT");
+        require(_transfer(fundsAsset_, _pool(),         uint256(principal_) + netInterest_),           "LM:DCF:TRANSFER_P");
+        require(_transfer(fundsAsset_, _poolDelegate(), delegateServiceFee_ + delegateManagementFee_), "LM:DCF:TRANSFER_PD");
+        require(_transfer(fundsAsset_, _treasury(),     platformServiceFee_ + platformManagementFee_), "LM:DCF:TRANSFER_MT");
     }
 
     function _distributeLiquidationFunds(

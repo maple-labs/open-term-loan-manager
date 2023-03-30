@@ -136,7 +136,7 @@ contract MockLoan is Spied {
     mapping(uint256 => uint256) _interest;
     mapping(uint256 => uint256) _lateInterest;
 
-    uint256 _platformServiceFee; 
+    uint256 _platformServiceFee;
 
     function callPrincipal(uint256) external virtual spied returns (uint40 paymentDueDate_, uint40 defaultDate_) {
         ( paymentDueDate_, defaultDate_ ) = ( paymentDueDate, defaultDate );
@@ -291,11 +291,9 @@ contract MockPoolManager is Spied {
     address public pool;
     address public poolDelegate;
 
-    uint256 public delegateManagementFeeRate;
+    bool public hasSufficientCover;
 
-    function hasSufficientCover() external pure returns (bool hasSufficientCover_) {
-        hasSufficientCover_ = true;
-    }
+    uint256 public delegateManagementFeeRate;
 
     function requestFunds(address destination_, uint256 principal_) external pure {}
 
@@ -309,6 +307,10 @@ contract MockPoolManager is Spied {
 
     function __setFactory(address factory_) external {
         factory = factory_;
+    }
+
+    function __setHasSufficientCover(bool hasSufficientCover_) external {
+        hasSufficientCover = hasSufficientCover_;
     }
 
     function __setPool(address pool_) external {
