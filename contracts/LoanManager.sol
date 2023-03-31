@@ -146,7 +146,10 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
             "LM:C:INVALID"
         );
 
-        _accountForLoanImpairmentRemoval(msg.sender);
+        // Calculate the original principal to correctly account for removing `unrealizedLosses` when removing the impairment.
+        uint256 originalPrincipal_ = uint256(_int256(principalRemaining_) + principal_);
+
+        _accountForLoanImpairmentRemoval(msg.sender, originalPrincipal_);
 
         // Transfer the funds from the loan to the `pool`, `poolDelegate`, and `mapleTreasury`.
         _distributeClaimedFunds(msg.sender, principal_, interest_, delegateServiceFee_, platformServiceFee_);
@@ -220,7 +223,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     }
 
     function removeLoanImpairment(address loan_) external override notPaused isLoan(loan_) {
-        ( , bool impairedByGovernor ) = _accountForLoanImpairmentRemoval(loan_);
+        ( , bool impairedByGovernor ) = _accountForLoanImpairmentRemoval(loan_, IMapleLoanLike(loan_).principal());
 
         require(msg.sender == _governor() || (!impairedByGovernor && msg.sender == _poolDelegate()), "LM:RLI:NO_AUTH");
 
@@ -352,7 +355,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         impairedDate_ = _accountForLoanImpairment(loan_, true);
     }
 
-    function _accountForLoanImpairmentRemoval(address loan_) internal returns (uint40 impairedDate_, bool impairedByGovernor_) {
+    function _accountForLoanImpairmentRemoval(address loan_, uint256 originalPrincipal_) internal returns (uint40 impairedDate_, bool impairedByGovernor_) {
         Payment memory payment_ = paymentFor[loan_];
 
         Impairment memory impairment_ = impairmentFor[loan_];
@@ -364,10 +367,8 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
         delete impairmentFor[loan_];
 
-        uint256 principal_ = IMapleLoanLike(loan_).principal();
-
         // Subtract the payment's entire interest until it's impairment date, and the loan's principal, from unrealized losses.
-        _updateUnrealizedLosses(-_int256(principal_ + _getIssuance(payment_.issuanceRate, impairedDate_ - payment_.startDate)));
+        _updateUnrealizedLosses(-_int256(originalPrincipal_ + _getIssuance(payment_.issuanceRate, impairedDate_ - payment_.startDate)));
 
         // Account for all interest until now, adjusting for payment's interest between its impairment date and now,
         // then add payment's `issuanceRate` to the global `issuanceRate`.
