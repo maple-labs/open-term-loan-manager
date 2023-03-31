@@ -161,11 +161,15 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         // Remove the payment and cache the struct.
         Payment memory claimedPayment_ = _removePayment(msg.sender);
 
-        int256 interestAdjustment_ = -_int256(_getIssuance(claimedPayment_.issuanceRate, block.timestamp - claimedPayment_.startDate));
+        int256 accountedInterestAdjustment_
+            = -_int256(_getIssuance(claimedPayment_.issuanceRate, block.timestamp - claimedPayment_.startDate));
 
         // If no new payment to track, update accounting and account for discrepancies in paid interest vs accrued interest since the
         // payment's start date, and exit.
-        if (nextPaymentDueDate_ == 0) return _updateInterestAccounting(interestAdjustment_, -_int256(claimedPayment_.issuanceRate));
+        if (nextPaymentDueDate_ == 0) {
+            return _updateInterestAccounting(accountedInterestAdjustment_, -_int256(claimedPayment_.issuanceRate));
+        }
+
 
         if (principal_ < 0) {
             // TODO: Need to check borrower is still whitelisted?
@@ -177,7 +181,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         Payment memory nextPayment_ = _addPayment(msg.sender);
 
         // Update accounting and account for discrepancies in paid interest vs accrued interest since the payment's start date, and exit.
-        _updateInterestAccounting(interestAdjustment_, _int256(nextPayment_.issuanceRate) - _int256(claimedPayment_.issuanceRate));
+        _updateInterestAccounting(accountedInterestAdjustment_, _int256(nextPayment_.issuanceRate) - _int256(claimedPayment_.issuanceRate));
     }
 
     /**************************************************************************************************************************************/
@@ -476,9 +480,9 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         success_ = (to_ != address(0)) && ((amount_ == 0) || ERC20Helper.transfer(asset_, to_, amount_));
     }
 
-    function _updateInterestAccounting(int256 interestAdjustment_, int256 issuanceRateAdjustment_) internal {
+    function _updateInterestAccounting(int256 accountedInterestAdjustment_, int256 issuanceRateAdjustment_) internal {
         // NOTE: Order of operations is important as `accruedInterest()` depends on the pre-adjusted `issuanceRate` and `domainStart`.
-        accountedInterest = _uint112(_max(_int256(accountedInterest + accruedInterest()) + interestAdjustment_, 0));
+        accountedInterest = _uint112(_max(_int256(accountedInterest + accruedInterest()) + accountedInterestAdjustment_, 0));
         domainStart       = _uint40(block.timestamp);
         issuanceRate      = _uint256(_max(_int256(issuanceRate) + issuanceRateAdjustment_, 0));
 
