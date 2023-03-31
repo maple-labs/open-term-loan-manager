@@ -70,7 +70,7 @@ contract FundFailureTests is FundTestBase {
     }
 
     function test_fund_invalidLoan() public {
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
+        globals.__setInstanceOf("OT_LOAN_FACTORY", address(loanFactory), true);
 
         vm.prank(poolDelegate);
         vm.expectRevert("LM:F:INVALID_LOAN_INSTANCE");
@@ -78,7 +78,7 @@ contract FundFailureTests is FundTestBase {
     }
 
     function test_fund_invalidBorrower() public {
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
+        globals.__setInstanceOf("OT_LOAN_FACTORY", address(loanFactory), true);
 
         loanFactory.__setIsLoan(address(loan), true);
 
@@ -89,7 +89,7 @@ contract FundFailureTests is FundTestBase {
 
     function test_fund_inactiveLoan() public {
         globals.__setIsBorrower(true);
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
+        globals.__setInstanceOf("OT_LOAN_FACTORY", address(loanFactory), true);
 
         loan.__setPrincipal(0);
 
@@ -102,7 +102,7 @@ contract FundFailureTests is FundTestBase {
 
     function test_fund_failedApproval() public {
         globals.__setIsBorrower(true);
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
+        globals.__setInstanceOf("OT_LOAN_FACTORY", address(loanFactory), true);
 
         loan.__setPrincipal(1);
 
@@ -118,7 +118,7 @@ contract FundFailureTests is FundTestBase {
         MockReenteringLoan loan_ = new MockReenteringLoan();
 
         globals.__setIsBorrower(true);
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
+        globals.__setInstanceOf("OT_LOAN_FACTORY", address(loanFactory), true);
 
         loan_.__setFactory(address(loanFactory));
         loan_.__setPrincipal(1);
@@ -133,7 +133,7 @@ contract FundFailureTests is FundTestBase {
 
     function test_fund_fundingMismatch() public {
         globals.__setIsBorrower(true);
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
+        globals.__setInstanceOf("OT_LOAN_FACTORY", address(loanFactory), true);
 
         loan.__setPrincipal(1);
         loan.__setFundsLent(2);
@@ -158,7 +158,7 @@ contract FundSuccessTests is FundTestBase {
         super.setUp();
 
         globals.__setIsBorrower(true);
-        globals.__setIsFactory("OT_LOAN", address(loanFactory), true);
+        globals.__setInstanceOf("OT_LOAN_FACTORY", address(loanFactory), true);
 
         loanManager.__setFundsAsset(address(asset));
 

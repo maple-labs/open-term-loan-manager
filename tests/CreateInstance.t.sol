@@ -59,7 +59,7 @@ contract CreateInstanceTests is Test {
     }
 
     function test_createInstance_notPoolManager() external {
-        globals.__setIsFactory("POOL_MANAGER", address(poolManagerFactory), true);
+        globals.__setInstanceOf("POOL_MANAGER_FACTORY", address(poolManagerFactory), true);
         poolManager.__setFactory(address(poolManagerFactory));
 
         vm.expectRevert("LMF:CI:NOT_PM");
@@ -92,7 +92,7 @@ contract CreateInstanceTests is Test {
     }
 
     function test_createInstance_asPoolManager() external {
-        globals.__setIsFactory("POOL_MANAGER", address(poolManagerFactory), true);
+        globals.__setInstanceOf("POOL_MANAGER_FACTORY", address(poolManagerFactory), true);
         poolManager.__setFactory(address(poolManagerFactory));
         poolManagerFactory.__setIsInstance(address(poolManager), true);
 

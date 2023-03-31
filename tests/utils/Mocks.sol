@@ -70,6 +70,7 @@ contract MockGlobals {
     mapping(address => uint256) public platformManagementFeeRate;
 
     mapping(bytes32 => mapping(address => bool)) public isFactory;
+    mapping(bytes32 => mapping(address => bool)) public isInstanceOf;
 
     function __setGovernor(address governor_) external {
         governor = governor_;
@@ -89,6 +90,10 @@ contract MockGlobals {
 
     function __setIsFactory(bytes32 factoryType_, address factory_, bool isFactory_) external {
         isFactory[factoryType_][factory_] = isFactory_;
+    }
+
+    function __setInstanceOf(bytes32 instanceType_, address instance_, bool isInstance_) external {
+        isInstanceOf[instanceType_][instance_] = isInstance_;
     }
 
     function __setIsValidScheduledCall(bool isValid_) external {
