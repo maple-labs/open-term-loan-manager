@@ -379,6 +379,35 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         );
     }
 
+    function _removePayment(address loan_) internal returns (Payment memory payment_) {
+        payment_ = paymentFor[loan_];
+
+        delete paymentFor[loan_];
+
+        emit PaymentRemoved(loan_);
+    }
+
+    function _updateInterestAccounting(int256 accountedInterestAdjustment_, int256 issuanceRateAdjustment_) internal {
+        // NOTE: Order of operations is important as `accruedInterest()` depends on the pre-adjusted `issuanceRate` and `domainStart`.
+        accountedInterest = _uint112(_max(_int256(accountedInterest + accruedInterest()) + accountedInterestAdjustment_, 0));
+        domainStart       = _uint40(block.timestamp);
+        issuanceRate      = _uint256(_max(_int256(issuanceRate) + issuanceRateAdjustment_, 0));
+
+        emit AccountingStateUpdated(issuanceRate, accountedInterest);
+    }
+
+    function _updatePrincipalOut(int256 principalOutAdjustment_) internal {
+        emit PrincipalOutUpdated(principalOut = _uint128(_max(_int256(principalOut) + principalOutAdjustment_, 0)));
+    }
+
+    function _updateUnrealizedLosses(int256 lossesAdjustment_) internal {
+        emit UnrealizedLossesUpdated(unrealizedLosses = _uint128(_max(_int256(unrealizedLosses) + lossesAdjustment_, 0)));
+    }
+
+    /**************************************************************************************************************************************/
+    /*** Funds Distribution Functions                                                                                                   ***/
+    /**************************************************************************************************************************************/
+
     function _distributeClaimedFunds(
         address loan_,
         int256  principal_,
@@ -469,33 +498,8 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         require(ERC20Helper.approve(fundsAsset, loan_, amount_), "LM:PFFL:APPROVE_FAILED");
     }
 
-    function _removePayment(address loan_) internal returns (Payment memory payment_) {
-        payment_ = paymentFor[loan_];
-
-        delete paymentFor[loan_];
-
-        emit PaymentRemoved(loan_);
-    }
-
     function _transfer(address asset_, address to_, uint256 amount_) internal returns (bool success_) {
         success_ = (to_ != address(0)) && ((amount_ == 0) || ERC20Helper.transfer(asset_, to_, amount_));
-    }
-
-    function _updateInterestAccounting(int256 accountedInterestAdjustment_, int256 issuanceRateAdjustment_) internal {
-        // NOTE: Order of operations is important as `accruedInterest()` depends on the pre-adjusted `issuanceRate` and `domainStart`.
-        accountedInterest = _uint112(_max(_int256(accountedInterest + accruedInterest()) + accountedInterestAdjustment_, 0));
-        domainStart       = _uint40(block.timestamp);
-        issuanceRate      = _uint256(_max(_int256(issuanceRate) + issuanceRateAdjustment_, 0));
-
-        emit AccountingStateUpdated(issuanceRate, accountedInterest);
-    }
-
-    function _updatePrincipalOut(int256 principalOutAdjustment_) internal {
-        emit PrincipalOutUpdated(principalOut = _uint128(_max(_int256(principalOut) + principalOutAdjustment_, 0)));
-    }
-
-    function _updateUnrealizedLosses(int256 lossesAdjustment_) internal {
-        emit UnrealizedLossesUpdated(unrealizedLosses = _uint128(_max(_int256(unrealizedLosses) + lossesAdjustment_, 0)));
     }
 
     /**************************************************************************************************************************************/
