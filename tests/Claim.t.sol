@@ -16,6 +16,7 @@ import {
 
 contract ClaimTestBase is TestBase {
 
+    address borrower     = makeAddr("borrower");
     address poolDelegate = makeAddr("poolDelegate");
     address pool         = makeAddr("pool");
 
@@ -28,6 +29,8 @@ contract ClaimTestBase is TestBase {
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
+        globals.__setIsBorrower(true);
+
         factory.__setGlobals(address(globals));
 
         poolManager.__setAsset(address(asset));
@@ -567,6 +570,7 @@ contract ClaimTests is ClaimTestBase {
         asset.mint(address(loanManager), returnedPrincipal + interest1 + platformServiceFee + delegateServiceFee);
 
         loan.__setPrincipal(principal - returnedPrincipal);
+        loan.__setBorrower(borrower);
 
         vm.prank(address(loan));
         loanManager.claim({

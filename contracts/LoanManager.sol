@@ -173,10 +173,11 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
             return _updateInterestAccounting(accountedInterestAdjustment_, -_int256(claimedPayment_.issuanceRate));
         }
 
-
         if (principal_ < 0) {
-            // TODO: Need to check borrower is still whitelisted?
-            // TODO: Issue exists where the loan doesn't pull funds, and this can't revert due to loss of context, resulting in stuck funds.
+            address borrower_ = IMapleLoanLike(msg.sender).borrower();
+
+            require(IMapleGlobalsLike(_globals()).isBorrower(borrower_), "LM:C:INVALID_BORROWER");
+
             _prepareFundsForLoan(msg.sender, _uint256(-principal_));
         }
 
@@ -191,7 +192,6 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Loan Call Functions                                                                                                            ***/
     /**************************************************************************************************************************************/
 
-    // TODO: Check if we want to also allow the governor to `call()` and `removeCall()`
     function callPrincipal(address loan_, uint256 principal_) external override notPaused {
         require(msg.sender == _poolDelegate(), "LM:C:NOT_PD");
 

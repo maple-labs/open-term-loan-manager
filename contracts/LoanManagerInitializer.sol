@@ -6,8 +6,6 @@ import { IPoolManagerLike }        from "./interfaces/Interfaces.sol";
 
 import { LoanManagerStorage } from "./LoanManagerStorage.sol";
 
-// TODO: Better to take just the `poolManager` as an argument. `pool` is property of `poolManager`, as is `poolDelegate`.
-
 contract LoanManagerInitializer is ILoanManagerInitializer, LoanManagerStorage {
 
     function decodeArguments(bytes calldata calldata_) public pure override returns (address poolManager_) {
