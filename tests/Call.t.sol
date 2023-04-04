@@ -31,7 +31,7 @@ contract CallPrincipalTestBase is TestBase {
 contract CallPrincipalTests is CallPrincipalTestBase {
 
     function test_callPrincipal_paused() external {
-        globals.__setProtocolPaused(true);
+        globals.__setFunctionPaused(true);
 
         vm.expectRevert("LM:PAUSED");
         loanManager.callPrincipal(address(loan), 1_000_000e6);
@@ -55,7 +55,7 @@ contract CallPrincipalTests is CallPrincipalTestBase {
 contract RemoveCallTests is CallPrincipalTestBase {
 
     function test_removeCall_paused() external {
-        globals.__setProtocolPaused(true);
+        globals.__setFunctionPaused(true);
 
         vm.expectRevert("LM:PAUSED");
         loanManager.removeCall(address(loan));

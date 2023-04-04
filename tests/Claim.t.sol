@@ -52,7 +52,7 @@ contract ClaimTestBase is TestBase {
 contract ClaimFailureTests is ClaimTestBase {
 
     function test_claim_notPaused() public {
-        globals.__setProtocolPaused(true);
+        globals.__setFunctionPaused(true);
 
         vm.expectRevert("LM:PAUSED");
         loanManager.claim({

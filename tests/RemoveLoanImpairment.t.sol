@@ -50,7 +50,7 @@ contract RemoveLoanImpairmentBase is TestBase {
 contract RemoveLoanImpairmentFailureTests is RemoveLoanImpairmentBase {
 
     function test_removeLoanImpairment_paused() external {
-        globals.__setProtocolPaused(true);
+        globals.__setFunctionPaused(true);
 
         vm.expectRevert("LM:PAUSED");
         loanManager.removeLoanImpairment(address(loan));

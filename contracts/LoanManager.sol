@@ -37,7 +37,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     }
 
     modifier notPaused() {
-        require(!IMapleGlobalsLike(_globals()).protocolPaused(), "LM:PAUSED");
+        require(!IMapleGlobalsLike(_globals()).isFunctionPaused(msg.sig), "LM:PAUSED");
 
         _;
     }

@@ -40,7 +40,7 @@ contract TriggerDefaultBase is TestBase {
 contract TriggerDefaultFailureTests is TriggerDefaultBase {
 
     function test_triggerDefault_paused() external {
-        globals.__setProtocolPaused(true);
+        globals.__setFunctionPaused(true);
 
         vm.expectRevert("LM:PAUSED");
         loanManager.triggerDefault(address(1));

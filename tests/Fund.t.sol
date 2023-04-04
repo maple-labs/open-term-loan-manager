@@ -52,7 +52,7 @@ contract FundFailureTests is FundTestBase {
     }
 
     function test_fund_paused() public {
-        globals.__setProtocolPaused(true);
+        globals.__setFunctionPaused(true);
 
         vm.expectRevert("LM:PAUSED");
         loanManager.fund(address(0));

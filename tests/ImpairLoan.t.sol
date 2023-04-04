@@ -50,7 +50,7 @@ contract ImpairLoanBase is TestBase {
 contract ImpairLoanFailureTests is ImpairLoanBase {
 
     function test_impairLoan_paused() external {
-        globals.__setProtocolPaused(true);
+        globals.__setFunctionPaused(true);
 
         vm.expectRevert("LM:PAUSED");
         loanManager.impairLoan(address(loan));

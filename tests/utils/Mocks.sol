@@ -57,6 +57,7 @@ contract MockFactory {
 contract MockGlobals {
 
     bool internal _isBorrower;
+    bool internal _isFunctionPaused;
     bool internal _isValidScheduledCall;
 
     address public governor;
@@ -76,12 +77,16 @@ contract MockGlobals {
         governor = governor_;
     }
 
-    function isValidScheduledCall(address, address, bytes32, bytes calldata) external view returns (bool isValid_) {
-        isValid_ = _isValidScheduledCall;
-    }
-
     function isBorrower(address) external view returns (bool isBorrower_) {
         isBorrower_ = _isBorrower;
+    }
+
+    function isFunctionPaused(bytes4) external view returns (bool isFunctionPaused_) {
+        isFunctionPaused_ = _isFunctionPaused;
+    }
+
+    function isValidScheduledCall(address, address, bytes32, bytes calldata) external view returns (bool isValid_) {
+        isValid_ = _isValidScheduledCall;
     }
 
     function __setIsBorrower(bool isBorrower_) external {
@@ -117,6 +122,10 @@ contract MockGlobals {
     }
 
     function unscheduleCall(address, bytes32, bytes calldata) external pure {}
+
+    function __setFunctionPaused(bool paused_) external {
+        _isFunctionPaused = paused_;
+    }
 
 }
 
