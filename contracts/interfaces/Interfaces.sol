@@ -9,17 +9,15 @@ interface ILoanFactoryLike {
 
 interface IMapleGlobalsLike {
 
+    function canDeploy(address caller_) external view returns (bool canDeploy_);
+
     function governor() external view returns (address governor_);
 
     function isBorrower(address borrower_) external view returns (bool isBorrower_);
 
-    function isFactory(bytes32 factoryId_, address factory_) external view returns (bool isValid_);
-
     function isFunctionPaused(bytes4 sig_) external view returns (bool isFunctionPaused_);
 
     function isInstanceOf(bytes32 instanceId, address instance_) external view returns (bool isInstance_);
-
-    function isPoolDeployer(address poolDeployer_) external view returns (bool isPoolDeployer_);
 
     function isValidScheduledCall(address caller_, address contract_, bytes32 functionId_, bytes calldata callData_)
         external view returns (bool isValid_);

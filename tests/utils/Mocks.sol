@@ -56,6 +56,7 @@ contract MockFactory {
 
 contract MockGlobals {
 
+    bool internal _canDeploy;
     bool internal _isBorrower;
     bool internal _isFunctionPaused;
     bool internal _isValidScheduledCall;
@@ -65,16 +66,13 @@ contract MockGlobals {
 
     bool public protocolPaused;
 
-    mapping(address => bool) public isPoolDeployer;
-
     mapping(address => uint256) public getLatestPrice;
     mapping(address => uint256) public platformManagementFeeRate;
 
-    mapping(bytes32 => mapping(address => bool)) public isFactory;
     mapping(bytes32 => mapping(address => bool)) public isInstanceOf;
 
-    function __setGovernor(address governor_) external {
-        governor = governor_;
+    function canDeploy(address) external view returns (bool canDeploy_) {
+        canDeploy_ = _canDeploy;
     }
 
     function isBorrower(address) external view returns (bool isBorrower_) {
@@ -89,12 +87,30 @@ contract MockGlobals {
         isValid_ = _isValidScheduledCall;
     }
 
-    function __setIsBorrower(bool isBorrower_) external {
-        _isBorrower = isBorrower_;
+    function setMapleTreasury(address treasury_) external {
+        mapleTreasury = treasury_;
     }
 
-    function __setIsFactory(bytes32 factoryType_, address factory_, bool isFactory_) external {
-        isFactory[factoryType_][factory_] = isFactory_;
+    function setPlatformManagementFeeRate(address poolManager_, uint256 platformManagementFeeRate_) external {
+        platformManagementFeeRate[poolManager_] = platformManagementFeeRate_;
+    }
+
+    function unscheduleCall(address, bytes32, bytes calldata) external pure {}
+
+    function __setCanDeploy(bool canDeploy_) external {
+        _canDeploy = canDeploy_;
+    }
+
+    function __setFunctionPaused(bool paused_) external {
+        _isFunctionPaused = paused_;
+    }
+
+    function __setGovernor(address governor_) external {
+        governor = governor_;
+    }
+
+    function __setIsBorrower(bool isBorrower_) external {
+        _isBorrower = isBorrower_;
     }
 
     function __setInstanceOf(bytes32 instanceType_, address instance_, bool isInstance_) external {
@@ -105,26 +121,8 @@ contract MockGlobals {
         _isValidScheduledCall = isValid_;
     }
 
-    function setMapleTreasury(address treasury_) external {
-        mapleTreasury = treasury_;
-    }
-
     function __setProtocolPaused(bool paused_) external {
         protocolPaused = paused_;
-    }
-
-    function setPlatformManagementFeeRate(address poolManager_, uint256 platformManagementFeeRate_) external {
-        platformManagementFeeRate[poolManager_] = platformManagementFeeRate_;
-    }
-
-    function setValidPoolDeployer(address poolDeployer_, bool isValid_) external {
-        isPoolDeployer[poolDeployer_] = isValid_;
-    }
-
-    function unscheduleCall(address, bytes32, bytes calldata) external pure {}
-
-    function __setFunctionPaused(bool paused_) external {
-        _isFunctionPaused = paused_;
     }
 
 }

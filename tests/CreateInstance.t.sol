@@ -39,64 +39,33 @@ contract CreateInstanceTests is Test {
         factory.setDefaultVersion(1);
         vm.stopPrank();
 
-        globals.setValidPoolDeployer(poolDeployer, true);
-
         poolManager.__setAsset(address(asset));
         poolManager.__setPool(address(pool));
     }
 
-    function test_createInstance_notPoolDeployer() external {
-        globals.setValidPoolDeployer(address(this), false);
-
-        vm.expectRevert();
-        LoanManager(factory.createInstance(abi.encode(address(pool)), "SALT"));
-    }
-
-    function test_createInstance_invalidPoolManagerFactory() external {
-        vm.expectRevert("LMF:CI:INVALID_FACTORY");
-        vm.prank(address(poolManager));
-        LoanManager(factory.createInstance(abi.encode(address(pool)), "SALT"));
-    }
-
-    function test_createInstance_notPoolManager() external {
-        globals.__setInstanceOf("POOL_MANAGER_FACTORY", address(poolManagerFactory), true);
-        poolManager.__setFactory(address(poolManagerFactory));
-
-        vm.expectRevert("LMF:CI:NOT_PM");
-        vm.prank(address(poolManager));
+    function test_createInstance_cannotDeploy() external {
+        vm.expectRevert("LMF:CI:CANNOT_DEPLOY");
         LoanManager(factory.createInstance(abi.encode(address(pool)), "SALT"));
     }
 
     function testFail_createInstance_notPool() external {
+        globals.__setCanDeploy(true);
+
         factory.createInstance(abi.encode(address(1)), "SALT");
     }
 
     function testFail_createInstance_collision() external {
+        globals.__setCanDeploy(true);
+
         factory.createInstance(abi.encode(address(pool)), "SALT");
         factory.createInstance(abi.encode(address(pool)), "SALT");
     }
 
-    function test_createInstance_success_asPoolDeployer() external {
+    function test_createInstance_success() external {
+        globals.__setCanDeploy(true);
+
         vm.expectEmit();
         emit Initialized(address(poolManager));
-
-        vm.prank(poolDeployer);
-        LoanManager loanManager_ = LoanManager(factory.createInstance(abi.encode(address(poolManager)), "SALT"));
-
-        assertEq(loanManager_.HUNDRED_PERCENT(), 1e6);
-        assertEq(loanManager_.PRECISION(),       1e27);
-        assertEq(loanManager_.factory(),         address(factory));
-        assertEq(loanManager_.fundsAsset(),      address(asset));
-        assertEq(loanManager_.implementation(),  implementation);
-        assertEq(loanManager_.poolManager(),     address(poolManager));
-    }
-
-    function test_createInstance_asPoolManager() external {
-        globals.__setInstanceOf("POOL_MANAGER_FACTORY", address(poolManagerFactory), true);
-        poolManager.__setFactory(address(poolManagerFactory));
-        poolManagerFactory.__setIsInstance(address(poolManager), true);
-
-        vm.prank(address(poolManager));
 
         LoanManager loanManager_ = LoanManager(factory.createInstance(abi.encode(address(poolManager)), "SALT"));
 
