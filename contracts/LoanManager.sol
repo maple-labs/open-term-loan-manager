@@ -256,7 +256,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         uint40 impairedDate_ = _accountForLoanImpairment(loan_);
 
         ( , uint256 interest_, uint256 lateInterest_, , uint256 platformServiceFee_ )
-            = IMapleLoanLike(loan_).paymentBreakdown(impairedDate_);
+            = IMapleLoanLike(loan_).getPaymentBreakdown(impairedDate_);
 
         uint256 principal_ = IMapleLoanLike(loan_).principal();
 
@@ -511,7 +511,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     }
 
     function _getNetInterest(address loan_, uint256 timestamp_, uint256 managementFeeRate_) internal view returns (uint256 netInterest_) {
-        ( , uint256 interest_, , , ) = IMapleLoanLike(loan_).paymentBreakdown(timestamp_);
+        ( , uint256 interest_, , , ) = IMapleLoanLike(loan_).getPaymentBreakdown(timestamp_);
 
         netInterest_ = _getNetInterest(interest_, managementFeeRate_);
     }

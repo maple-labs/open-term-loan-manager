@@ -44,7 +44,7 @@ interface IMapleLoanLike {
 
     function paymentDueDate() external view returns (uint40 paymentDueDate_);
 
-    function paymentBreakdown(uint256 paymentTimestamp_)
+    function getPaymentBreakdown(uint256 paymentTimestamp_)
         external view
         returns (
             uint256 principal_,

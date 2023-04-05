@@ -166,7 +166,7 @@ contract MockLoan is Spied {
         isImpaired_ = dateImpaired != 0;
     }
 
-    function paymentBreakdown(uint256 timestamp_)
+    function getPaymentBreakdown(uint256 timestamp_)
         external view
         returns (
             uint256 calledPrincipal_,
