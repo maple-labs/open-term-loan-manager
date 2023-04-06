@@ -11,9 +11,8 @@ contract RejectNewTermsTests is TestBase {
     address refinancer   = makeAddr("refinancer");
 
     LoanManagerHarness loanManager = new LoanManagerHarness();
-
-    MockLoan        loan        = new MockLoan();
-    MockPoolManager poolManager = new MockPoolManager();
+    MockLoan           loan        = new MockLoan();
+    MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public {
         poolManager.__setPoolDelegate(poolDelegate);

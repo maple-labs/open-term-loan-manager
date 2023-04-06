@@ -38,14 +38,16 @@ contract Spied is Test {
 
 }
 
-contract MockFactory {
+contract MockFactory is Spied {
 
     address public mapleGlobals;
 
     mapping(address => bool) public isInstance;
 
-    function __setGlobals(address globals_) external {
-        mapleGlobals = globals_;
+    function upgradeInstance(uint256 version_, bytes calldata arguments_) external spied {}
+
+    function __setMapleGlobals(address mapleGlobals_) external {
+        mapleGlobals = mapleGlobals_;
     }
 
     function __setIsInstance(address instance_, bool isInstance_) external {
@@ -63,6 +65,7 @@ contract MockGlobals {
 
     address public governor;
     address public mapleTreasury;
+    address public securityAdmin;
 
     bool public protocolPaused;
 
@@ -123,6 +126,10 @@ contract MockGlobals {
 
     function __setProtocolPaused(bool paused_) external {
         protocolPaused = paused_;
+    }
+
+    function __setSecurityAdmin(address securityAdmin_) external {
+        securityAdmin = securityAdmin_;
     }
 
 }
@@ -286,7 +293,7 @@ contract MockLoanFactory {
 
     mapping(address => bool) public isLoan;
 
-    function __setGlobals(address globals_) external {
+    function __setMapleGlobals(address globals_) external {
         mapleGlobals = globals_;
     }
 

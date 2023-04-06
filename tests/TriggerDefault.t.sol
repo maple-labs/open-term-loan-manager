@@ -27,7 +27,7 @@ contract TriggerDefaultBase is TestBase {
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
-        factory.__setGlobals(address(globals));
+        factory.__setMapleGlobals(address(globals));
 
         loanManager.__setFactory(address(factory));
         loanManager.__setPoolManager(address(poolManager));

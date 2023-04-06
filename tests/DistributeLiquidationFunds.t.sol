@@ -24,7 +24,7 @@ contract DistributeLiquidationFundsBase is TestBase {
     MockPoolManager    poolManager = new MockPoolManager();
 
     function setUp() public virtual {
-        factory.__setGlobals(address(globals));
+        factory.__setMapleGlobals(address(globals));
 
         poolManager.__setAsset(address(asset));
 

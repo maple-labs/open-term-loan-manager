@@ -31,7 +31,7 @@ contract ClaimTestBase is TestBase {
     function setUp() public virtual {
         globals.__setIsBorrower(true);
 
-        factory.__setGlobals(address(globals));
+        factory.__setMapleGlobals(address(globals));
 
         poolManager.__setAsset(address(asset));
         poolManager.__setPool(pool);
