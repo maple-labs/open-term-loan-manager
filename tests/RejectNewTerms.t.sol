@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { LoanManagerHarness }        from "./utils/Harnesses.sol";
-import { TestBase }                  from "./utils/TestBase.sol";
-import { MockLoan, MockPoolManager } from "./utils/Mocks.sol";
+import { LoanManagerHarness } from "./utils/Harnesses.sol";
+import { TestBase }           from "./utils/TestBase.sol";
+
+import {
+    MockFactory,
+    MockGlobals,
+    MockLoan,
+    MockPoolManager
+} from "./utils/Mocks.sol";
 
 contract RejectNewTermsTests is TestBase {
 
@@ -11,14 +17,27 @@ contract RejectNewTermsTests is TestBase {
     address refinancer   = makeAddr("refinancer");
 
     LoanManagerHarness loanManager = new LoanManagerHarness();
-    MockLoan           loan        = new MockLoan();
-    MockPoolManager    poolManager = new MockPoolManager();
+
+    MockFactory     factory     = new MockFactory();
+    MockGlobals     globals     = new MockGlobals();
+    MockLoan        loan        = new MockLoan();
+    MockPoolManager poolManager = new MockPoolManager();
 
     function setUp() public {
+        factory.__setMapleGlobals(address(globals));
+
         poolManager.__setPoolDelegate(poolDelegate);
 
         loanManager.__setLocked(1);
         loanManager.__setPoolManager(address(poolManager));
+        loanManager.__setFactory(address(factory));
+    }
+
+    function test_rejectNewTerms_paused() public {
+        globals.__setFunctionPaused(true);
+
+        vm.expectRevert("LM:PAUSED");
+        loanManager.rejectNewTerms(address(loan), address(0), 0, new bytes[](0));
     }
 
     function test_rejectNewTerms_notPoolDelegate() public {

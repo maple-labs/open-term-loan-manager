@@ -56,12 +56,12 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Upgradeability Functions                                                                                                       ***/
     /**************************************************************************************************************************************/
 
-    function migrate(address migrator_, bytes calldata arguments_) external override {
+    function migrate(address migrator_, bytes calldata arguments_) external override notPaused {
         require(msg.sender == _factory(),        "LM:M:NOT_FACTORY");
         require(_migrate(migrator_, arguments_), "LM:M:FAILED");
     }
 
-    function setImplementation(address implementation_) external override {
+    function setImplementation(address implementation_) external override notPaused {
         require(msg.sender == _factory(), "LM:SI:NOT_FACTORY");
 
         _setImplementation(implementation_);
@@ -114,13 +114,13 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         _updateInterestAccounting(0, _int256(payment_.issuanceRate));
     }
 
-    function proposeNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_) external override {
+    function proposeNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_) external override notPaused {
         require(msg.sender == _poolDelegate(), "LM:PNT:NOT_PD");
 
         IMapleLoanLike(loan_).proposeNewTerms(refinancer_, deadline_, calls_);
     }
 
-    function rejectNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_) external override {
+    function rejectNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_) external override notPaused {
         require(msg.sender == _poolDelegate(), "LM:RNT:NOT_PD");
 
         IMapleLoanLike(loan_).rejectNewTerms(refinancer_, deadline_, calls_);
