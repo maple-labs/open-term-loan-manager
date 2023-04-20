@@ -332,11 +332,11 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     }
 
     function _accountForLoanImpairment(address loan_, bool isGovernor_) internal returns (uint40 impairedDate_) {
-        Payment memory payment_ = paymentFor[loan_];
-
         impairedDate_ = impairmentFor[loan_].impairedDate;
 
         if (impairedDate_ != 0) return impairedDate_;
+
+        Payment memory payment_ = paymentFor[loan_];
 
         impairmentFor[loan_] = Impairment(impairedDate_ = _uint40(block.timestamp), isGovernor_);
 
@@ -358,8 +358,6 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     }
 
     function _accountForLoanImpairmentRemoval(address loan_, uint256 originalPrincipal_) internal returns (uint40 impairedDate_, bool impairedByGovernor_) {
-        Payment memory payment_ = paymentFor[loan_];
-
         Impairment memory impairment_ = impairmentFor[loan_];
 
         impairedDate_       = impairment_.impairedDate;
@@ -368,6 +366,8 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
         if (impairedDate_ == 0) return ( impairedDate_, impairedByGovernor_ );
 
         delete impairmentFor[loan_];
+
+        Payment memory payment_ = paymentFor[loan_];
 
         // Subtract the payment's entire interest until it's impairment date, and the loan's principal, from unrealized losses.
         _updateUnrealizedLosses(-_int256(originalPrincipal_ + _getIssuance(payment_.issuanceRate, impairedDate_ - payment_.startDate)));
