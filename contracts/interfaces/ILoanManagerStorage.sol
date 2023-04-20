@@ -28,10 +28,10 @@ interface ILoanManagerStorage {
     function issuanceRate() external view returns (uint256 issuanceRate_);
 
     /**
-     *  @dev    Gets the information for a liquidation.
+     *  @dev    Gets the information for an impairment.
      *  @param  loan_              The address of the loan.
-     *  @return impairedDate       The date the liquidation was triggered.
-     *  @return impairedByGovernor True if the liquidation was triggered by the governor.
+     *  @return impairedDate       The date the impairment was triggered.
+     *  @return impairedByGovernor True if the impairment was triggered by the governor.
      */
     function impairmentFor(address loan_) external view returns (uint40 impairedDate, bool impairedByGovernor);
 

@@ -284,7 +284,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
 
         // The payment's interest until the `impairedDate` must be deducted from `accountedInterest`, thus realizing the interest loss.
         // The unrealized losses incurred due to the impairment must be deducted from the global `unrealizedLosses`.
-        // The the loan's principal must be deducted from `principalOut`, hus realizing the principal loss.
+        // The loan's principal must be deducted from `principalOut`, thus realizing the principal loss.
         _updateInterestAccounting(-_int256(accountedImpairedInterest_), 0);
         _updateUnrealizedLosses(-_int256(principal_ + accountedImpairedInterest_));
         _updatePrincipalOut(-_int256(principal_));
@@ -519,7 +519,7 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     }
 
     function _getNetInterest(uint256 interest_, uint256 feeRate_) internal pure returns (uint256 netInterest_) {
-        // NOTE: This ensures that `netInterest_ == interest_ + fee_`, since absolutes are subtracted, not rates.
+        // NOTE: This ensures that `netInterest_ == interest_ - fee_`, since absolutes are subtracted, not rates.
         netInterest_ = interest_ - _getRatedAmount(interest_, feeRate_);
     }
 

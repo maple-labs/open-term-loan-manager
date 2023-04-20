@@ -64,7 +64,7 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
     event LiquidatedFundsDistributed(address indexed loan_, uint256 toBorrower_, uint256 toPool_, uint256 toTreasury_);
 
     /**
-     *  @dev   Emitted when a payment is removed from the LoanManager payments array.
+     *  @dev   Emitted when a payment is added to the LoanManager payments array.
      *  @param loan_ The address of the loan.
      */
     event PaymentAdded(
