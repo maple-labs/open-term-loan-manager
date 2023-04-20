@@ -225,9 +225,9 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     }
 
     function removeLoanImpairment(address loan_) external override notPaused isLoan(loan_) {
-        ( , bool impairedByGovernor ) = _accountForLoanImpairmentRemoval(loan_, IMapleLoanLike(loan_).principal());
+        ( , bool impairedByGovernor_ ) = _accountForLoanImpairmentRemoval(loan_, IMapleLoanLike(loan_).principal());
 
-        require(msg.sender == _governor() || (!impairedByGovernor && msg.sender == _poolDelegate()), "LM:RLI:NO_AUTH");
+        require(msg.sender == _governor() || (!impairedByGovernor_ && msg.sender == _poolDelegate()), "LM:RLI:NO_AUTH");
 
         IMapleLoanLike(loan_).removeImpairment();
     }
