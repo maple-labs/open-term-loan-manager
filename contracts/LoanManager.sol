@@ -334,6 +334,9 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     function _accountForLoanImpairment(address loan_, bool isGovernor_) internal returns (uint40 impairedDate_) {
         impairedDate_ = impairmentFor[loan_].impairedDate;
 
+        // NOTE: Impairing an already-impaired loan simply updates the `dateImpaired` of the loan, which can push the due date further,
+        //       however, the `impairedDate` in the struct should not be updated since it defines the moment when accounting for the loan's
+        //       payment was paused, and is needed to restore accounting for the eventual removal of the impairment, or the default.
         if (impairedDate_ != 0) return impairedDate_;
 
         Payment memory payment_ = paymentFor[loan_];
