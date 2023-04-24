@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-interface ILoanFactoryLike {
-
-    function isLoan(address loan_) external view returns (bool isLoan_);
-
-}
-
-interface IMapleGlobalsLike {
+interface IGlobalsLike {
 
     function canDeploy(address caller_) external view returns (bool canDeploy_);
 
@@ -32,7 +26,13 @@ interface IMapleGlobalsLike {
 
 }
 
-interface IMapleLoanLike {
+interface ILoanFactoryLike {
+
+    function isLoan(address loan_) external view returns (bool isLoan_);
+
+}
+
+interface ILoanLike {
 
     function borrower() external view returns (address borrower_);
 

@@ -197,16 +197,16 @@ interface ILoanManager is IMapleProxied, ILoanManagerStorage {
     /**************************************************************************************************************************************/
 
     /**
-     *  @dev    Returns the precision used for the contract.
-     *  @return precision_ The precision used for the contract.
-     */
-    function PRECISION() external returns (uint256 precision_);
-
-    /**
      *  @dev    Returns the value considered as the hundred percent.
      *  @return hundredPercent_ The value considered as the hundred percent.
      */
     function HUNDRED_PERCENT() external returns (uint256 hundredPercent_);
+
+    /**
+     *  @dev    Returns the precision used for the contract.
+     *  @return precision_ The precision used for the contract.
+     */
+    function PRECISION() external returns (uint256 precision_);
 
     /**
      *  @dev    Gets the amount of accrued interest up until this point in time.

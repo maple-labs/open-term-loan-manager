@@ -3,8 +3,8 @@ pragma solidity 0.8.7;
 
 import { IMapleProxyFactory, MapleProxyFactory } from "../modules/maple-proxy-factory/contracts/MapleProxyFactory.sol";
 
-import { ILoanManagerFactory }                 from "./interfaces/ILoanManagerFactory.sol";
-import { IMapleGlobalsLike, IPoolManagerLike } from "./interfaces/Interfaces.sol";
+import { ILoanManagerFactory } from "./interfaces/ILoanManagerFactory.sol";
+import { IGlobalsLike }        from "./interfaces/Interfaces.sol";
 
 contract LoanManagerFactory is ILoanManagerFactory, MapleProxyFactory {
 
@@ -13,7 +13,7 @@ contract LoanManagerFactory is ILoanManagerFactory, MapleProxyFactory {
     function createInstance(bytes calldata arguments_, bytes32 salt_)
         override(IMapleProxyFactory, MapleProxyFactory) public returns (address instance_)
     {
-        require(IMapleGlobalsLike(mapleGlobals).canDeploy(msg.sender), "LMF:CI:CANNOT_DEPLOY");
+        require(IGlobalsLike(mapleGlobals).canDeploy(msg.sender), "LMF:CI:CANNOT_DEPLOY");
 
         instance_ = super.createInstance(arguments_, salt_);
     }
