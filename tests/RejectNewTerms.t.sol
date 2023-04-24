@@ -41,7 +41,7 @@ contract RejectNewTermsTests is TestBase {
     }
 
     function test_rejectNewTerms_notPoolDelegate() public {
-        vm.expectRevert("LM:RNT:NOT_PD");
+        vm.expectRevert("LM:NOT_PD");
         loanManager.rejectNewTerms(address(loan), address(0), 0, new bytes[](0));
     }
 

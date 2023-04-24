@@ -59,7 +59,7 @@ contract FundFailureTests is FundTestBase {
     }
 
     function test_fund_notPoolDelegate() public {
-        vm.expectRevert("LM:F:NOT_PD");
+        vm.expectRevert("LM:NOT_PD");
         loanManager.fund(address(0));
     }
 

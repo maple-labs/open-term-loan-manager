@@ -41,7 +41,7 @@ contract ProposeNewTermsTests is TestBase {
     }
 
     function test_proposeNewTerms_notPoolDelegate() public {
-        vm.expectRevert("LM:PNT:NOT_PD");
+        vm.expectRevert("LM:NOT_PD");
         loanManager.proposeNewTerms(address(loan), refinancer, block.timestamp, new bytes[](1));
     }
 
