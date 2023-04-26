@@ -32,6 +32,7 @@ contract CreateInstanceTests is Test {
     function setUp() public virtual {
         globals.__setGovernor(governor);
         globals.setMapleTreasury(treasury);
+        globals.__setInstanceOf("POOL_MANAGER_FACTORY", address(poolManagerFactory), true);
 
         vm.startPrank(governor);
         factory = new LoanManagerFactory(address(globals));
@@ -39,13 +40,16 @@ contract CreateInstanceTests is Test {
         factory.setDefaultVersion(1);
         vm.stopPrank();
 
+        poolManagerFactory.__setIsInstance(address(poolManager), true);
+
         poolManager.__setAsset(address(asset));
+        poolManager.__setFactory(address(poolManagerFactory));
         poolManager.__setPool(address(pool));
     }
 
     function test_createInstance_cannotDeploy() external {
         vm.expectRevert("LMF:CI:CANNOT_DEPLOY");
-        LoanManager(factory.createInstance(abi.encode(address(pool)), "SALT"));
+        LoanManager(factory.createInstance(abi.encode(address(poolManager)), "SALT"));
     }
 
     function testFail_createInstance_notPool() external {
@@ -57,8 +61,25 @@ contract CreateInstanceTests is Test {
     function testFail_createInstance_collision() external {
         globals.__setCanDeploy(true);
 
-        factory.createInstance(abi.encode(address(pool)), "SALT");
-        factory.createInstance(abi.encode(address(pool)), "SALT");
+        factory.createInstance(abi.encode(address(poolManager)), "SALT");
+        factory.createInstance(abi.encode(address(poolManager)), "SALT");
+    }
+
+    function test_createInstance_invalidFactory() external {
+        globals.__setCanDeploy(true);
+        globals.__setInstanceOf("POOL_MANAGER_FACTORY", address(poolManagerFactory), false);
+
+        vm.expectRevert("MPF:CI:FAILED");
+        factory.createInstance(abi.encode(address(poolManager)), "SALT");
+    }
+
+    function test_createInstance_invalidInstance() external {
+        globals.__setCanDeploy(true);
+
+        poolManagerFactory.__setIsInstance(address(poolManager), false);
+
+        vm.expectRevert("MPF:CI:FAILED");
+        factory.createInstance(abi.encode(address(poolManager)), "SALT");
     }
 
     function test_createInstance_success() external {

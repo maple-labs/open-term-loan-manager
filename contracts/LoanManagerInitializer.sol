@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.7;
 
-import { ILoanManagerInitializer } from "./interfaces/ILoanManagerInitializer.sol";
-import { IPoolManagerLike }        from "./interfaces/Interfaces.sol";
+import { ILoanManagerInitializer }                                from "./interfaces/ILoanManagerInitializer.sol";
+import { IGlobalsLike, IMapleProxyFactoryLike, IPoolManagerLike } from "./interfaces/Interfaces.sol";
 
 import { LoanManagerStorage } from "./LoanManagerStorage.sol";
 
@@ -19,6 +19,13 @@ contract LoanManagerInitializer is ILoanManagerInitializer, LoanManagerStorage {
     function _initialize(address poolManager_) internal {
         _locked = 1;
 
+        address factory_ = IPoolManagerLike(poolManager_).factory();
+        address globals_ = IMapleProxyFactoryLike(msg.sender).mapleGlobals();
+
+        require(IGlobalsLike(globals_).isInstanceOf("POOL_MANAGER_FACTORY", factory_), "LMI:I:INVALID_PM_FACTORY");
+        require(IMapleProxyFactoryLike(factory_).isInstance(poolManager_),             "LMI:I:INVALID_PM_INSTANCE");
+
+        // Since `poolManager` is a valid instance, `fundsAsset` must also be valid due to the pool manager initializer.
         fundsAsset = IPoolManagerLike(
             poolManager = poolManager_
         ).asset();

@@ -26,6 +26,14 @@ interface IGlobalsLike {
 
 }
 
+interface IMapleProxyFactoryLike {
+
+    function isInstance(address instance_) external returns (bool isInstance_);
+
+    function mapleGlobals() external returns (address globals_);
+
+}
+
 interface ILoanFactoryLike {
 
     function isLoan(address loan_) external view returns (bool isLoan_);
