@@ -45,7 +45,15 @@ contract ProposeNewTermsTests is TestBase {
         loanManager.proposeNewTerms(address(loan), refinancer, block.timestamp, new bytes[](1));
     }
 
+    function test_proposeNewTerms_notLoan() public {
+        vm.prank(poolDelegate);
+        vm.expectRevert("LM:NOT_LOAN");
+        loanManager.proposeNewTerms(address(0), refinancer, block.timestamp, new bytes[](1));
+    }
+
     function test_proposeNewTerms_success() public {
+        loanManager.__setPaymentFor(address(loan), 0, 0, block.timestamp, 0);
+        
         loan.__expectCall();
         loan.proposeNewTerms(refinancer, block.timestamp, new bytes[](1));
 

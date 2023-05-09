@@ -116,13 +116,13 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     }
 
     function proposeNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_)
-        external override whenNotPaused onlyPoolDelegate
+        external override whenNotPaused onlyPoolDelegate isLoan(loan_)
     {
         ILoanLike(loan_).proposeNewTerms(refinancer_, deadline_, calls_);
     }
 
     function rejectNewTerms(address loan_, address refinancer_, uint256 deadline_, bytes[] calldata calls_)
-        external override whenNotPaused onlyPoolDelegate
+        external override whenNotPaused onlyPoolDelegate isLoan(loan_)
     {
         ILoanLike(loan_).rejectNewTerms(refinancer_, deadline_, calls_);
     }
@@ -195,11 +195,11 @@ contract LoanManager is ILoanManager, MapleProxiedInternals, LoanManagerStorage 
     /*** Loan Call Functions                                                                                                            ***/
     /**************************************************************************************************************************************/
 
-    function callPrincipal(address loan_, uint256 principal_) external override whenNotPaused onlyPoolDelegate {
+    function callPrincipal(address loan_, uint256 principal_) external override whenNotPaused onlyPoolDelegate isLoan(loan_) {
         ILoanLike(loan_).callPrincipal(principal_);
     }
 
-    function removeCall(address loan_) external override whenNotPaused onlyPoolDelegate {
+    function removeCall(address loan_) external override whenNotPaused onlyPoolDelegate isLoan(loan_) {
         ILoanLike(loan_).removeCall();
     }
 

@@ -42,7 +42,15 @@ contract CallPrincipalTests is CallPrincipalTestBase {
         loanManager.callPrincipal(address(loan), 1_000_000e6);
     }
 
+    function test_callPrincipal_notLoan() external {
+        vm.prank(poolDelegate);
+        vm.expectRevert("LM:NOT_LOAN");
+        loanManager.callPrincipal(address(0), 1_000_000e6);
+    }
+
     function test_callPrincipal_success() external {
+        loanManager.__setPaymentFor(address(loan), 0, 0, block.timestamp, 0);
+
         loan.__expectCall();
         loan.callPrincipal(1_000_000e6);
 
@@ -66,7 +74,15 @@ contract RemoveCallTests is CallPrincipalTestBase {
         loanManager.removeCall(address(loan));
     }
 
+    function test_removeCall_notLoan() external {
+        vm.prank(poolDelegate);
+        vm.expectRevert("LM:NOT_LOAN");
+        loanManager.removeCall(address(0));
+    }
+
     function test_removeCall_success() external {
+        loanManager.__setPaymentFor(address(loan), 0, 0, block.timestamp, 0);
+
         loan.__expectCall();
         loan.removeCall();
 

@@ -45,7 +45,15 @@ contract RejectNewTermsTests is TestBase {
         loanManager.rejectNewTerms(address(loan), address(0), 0, new bytes[](0));
     }
 
+    function test_rejectNewTerms_notLoan() public {
+        vm.prank(poolDelegate);
+        vm.expectRevert("LM:NOT_LOAN");
+        loanManager.rejectNewTerms(address(0), address(0), 0, new bytes[](0));
+    }
+
     function test_rejectNewTerms_success() public {
+        loanManager.__setPaymentFor(address(loan), 0, 0, block.timestamp, 0);
+        
         loan.__expectCall();
         loan.rejectNewTerms(refinancer, block.timestamp, new bytes[](1));
 
