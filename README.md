@@ -1,9 +1,9 @@
 # Maple Open-Term Loan Manager
 
-[![Foundry CI](https://github.com/maple-labs/open-term-loan-manager-private/actions/workflows/forge.yaml/badge.svg)](https://github.com/maple-labs/open-term-loan-manager-private/actions/workflows/forge.yaml)
+[![Foundry CI](https://github.com/maple-labs/open-term-loan-manager/actions/workflows/forge.yaml/badge.svg)](https://github.com/maple-labs/open-term-loan-manager/actions/workflows/forge.yaml)
 [![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://maplefinance.gitbook.io/maple/technical-resources/protocol-overview)
 [![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://getfoundry.sh/)
-[![License: BUSL 1.1](https://img.shields.io/badge/License-BUSL%201.1-blue.svg)](https://github.com/maple-labs/open-term-loan-manager-private/blob/main/LICENSE)
+[![License: BUSL 1.1](https://img.shields.io/badge/License-BUSL%201.1-blue.svg)](https://github.com/maple-labs/open-term-loan-manager/blob/main/LICENSE)
 
 ## Overview
 
