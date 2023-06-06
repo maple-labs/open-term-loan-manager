@@ -26,8 +26,8 @@ Versions of dependencies can be checked with `git submodule status`.
 This project was built using [Foundry](https://book.getfoundry.sh/). Refer to installation instructions [here](https://github.com/foundry-rs/foundry#installation).
 
 ```sh
-git clone git@github.com:maple-labs/open-term-loan-manager-private.git
-cd open-term-loan-manager-private
+git clone git@github.com:maple-labs/open-term-loan-manager.git
+cd open-term-loan-manager
 forge install
 ```
 
@@ -40,7 +40,12 @@ forge install
 
 ## Audit Reports
 
-*TODO*
+### June 2023 Release
+
+| Auditor | Report Link |
+|---|---|
+| Spearbit Auditors via Cantina | [`2023-06-05 - Cantina Report`](https://docs.google.com/viewer?url=https://github.com/maple-labs/maple-v2-audits/files/11667848/cantina-maple.pdf) |
+| Three Sigma | [`2023-04-10 - Three Sigma Report`](https://docs.google.com/viewer?url=https://github.com/maple-labs/maple-v2-audits/files/11663546/maple-v2-audit_three-sigma_2023.pdf) |
 
 ## Bug Bounty
 
