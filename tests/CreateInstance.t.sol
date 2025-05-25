@@ -52,16 +52,19 @@ contract CreateInstanceTests is Test {
         LoanManager(factory.createInstance(abi.encode(address(poolManager)), "SALT"));
     }
 
-    function testFail_createInstance_notPool() external {
+    function test_createInstance_revertIfnotPool() external {
         globals.__setCanDeploy(true);
 
+        vm.expectRevert("MPF:CI:FAILED");
         factory.createInstance(abi.encode(address(1)), "SALT");
     }
 
-    function testFail_createInstance_collision() external {
+    function test_createInstance_revertIfCollision() external {
         globals.__setCanDeploy(true);
 
         factory.createInstance(abi.encode(address(poolManager)), "SALT");
+
+        vm.expectRevert();
         factory.createInstance(abi.encode(address(poolManager)), "SALT");
     }
 
